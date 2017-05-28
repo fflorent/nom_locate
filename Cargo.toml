@@ -1,0 +1,10 @@
+[package]
+name = "nom_locate"
+version = "0.0.0"
+authors = ["Florent FAYOLLE <florent.fayolle69@gmail.com>"]
+license = "MIT"
+
+[dependencies]
+nom = "3.0.0" # TODO only in test mod
+memchr = "1.0.1"
+
