@@ -44,6 +44,7 @@ impl<T: InputLength> InputLength for LocatedSpan<T> {
     }
 }
 
+#[macro_export]
 macro_rules! impl_input_iter {
     ($for_type:ty, $item:ty, $raw_item:ty, $iter:ty, $iter_elem:ty) => (
         impl<'a> InputIter for LocatedSpan<$for_type> {
@@ -75,6 +76,7 @@ impl_input_iter!(&'a [u8], &'a u8, u8, Enumerate<Iter<'a, Self::RawItem>>,
                  Iter<'a, Self::RawItem>);
 
 
+#[macro_export]
 macro_rules! compare_impl {
     ( $for_type:ty, $compare_to_type:ty ) => {
         impl<'a,'b> Compare<$compare_to_type> for $for_type {
@@ -95,6 +97,7 @@ compare_impl!(LocatedSpan<&'b str>, &'a str);
 compare_impl!(LocatedSpan<&'b [u8]>, &'a [u8]);
 compare_impl!(LocatedSpan<&'b [u8]>, &'a str);
 
+#[macro_export]
 macro_rules! slice_range_impl {
     ( $for_type:ty, $range_type:ty ) => {
         impl<'a> Slice<$range_type> for $for_type {
@@ -135,6 +138,7 @@ macro_rules! slice_range_impl {
     }
 }
 
+#[macro_export]
 macro_rules! slice_ranges_impl {
     ( $for_type:ty ) => {
         slice_range_impl! {$for_type, Range<usize>}
@@ -147,6 +151,7 @@ macro_rules! slice_ranges_impl {
 slice_ranges_impl! {LocatedSpan<&'a str>}
 slice_ranges_impl! {LocatedSpan<&'a [u8]>}
 
+#[macro_export]
 macro_rules! find_token_impl {
     ( $for_type:ty, $ty:ty, [$($lifetimes:tt),*] ) => {
         impl<'a$(, $lifetimes)*> FindToken<$ty> for $for_type {
@@ -181,6 +186,7 @@ impl<R: FromStr, T> ParseTo<R> for LocatedSpan<T>
     }
 }
 
+#[macro_export]
 macro_rules! offset_impl {
     ( $for_slice_type:ty ) => {
         #[cfg(not(feature = "core"))]
