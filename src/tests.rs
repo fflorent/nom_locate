@@ -11,10 +11,10 @@ type BytesSpan<'a> = LocatedSpan<&'a [u8]>;
 fn it_should_call_new_for_u8_successfully() {
     let input  = &b"foobar"[..];
     let output = BytesSpan {
-        index : 0,
+        offset : 0,
         line  : 1,
         column: 0,
-        slice : input
+        fragment : input
     };
 
     assert_eq!(BytesSpan::new(input), output);
@@ -24,10 +24,10 @@ fn it_should_call_new_for_u8_successfully() {
 fn it_should_call_new_for_str_successfully() {
     let input  = &"foobar"[..];
     let output = StrSpan {
-        index : 0,
+        offset : 0,
         line  : 1,
         column: 0,
-        slice : input
+        fragment : input
     };
 
     assert_eq!(StrSpan::new(input), output);
@@ -37,22 +37,22 @@ fn it_should_call_new_for_str_successfully() {
 fn it_should_slice_for_str() {
     let str_slice = StrSpan::new("foobar");
     assert_eq!(str_slice.slice(1..), StrSpan {
-        index: 1,
+        offset: 1,
         line: 1,
         column: 1,
-        slice: "oobar"
+        fragment: "oobar"
     });
     assert_eq!(str_slice.slice(1..3), StrSpan {
-        index: 1,
+        offset: 1,
         line: 1,
         column: 1,
-        slice: "oo"
+        fragment: "oo"
     });
     assert_eq!(str_slice.slice(..3), StrSpan {
-        index: 0,
+        offset: 0,
         line: 1,
         column: 0,
-        slice: "foo"
+        fragment: "foo"
     });
     assert_eq!(str_slice.slice(..), str_slice);
 }
@@ -61,22 +61,22 @@ fn it_should_slice_for_str() {
 fn it_should_slice_for_u8() {
     let bytes_slice = BytesSpan::new(b"foobar");
     assert_eq!(bytes_slice.slice(1..), BytesSpan {
-        index: 1,
+        offset: 1,
         line: 1,
         column: 1,
-        slice: b"oobar"
+        fragment: b"oobar"
     });
     assert_eq!(bytes_slice.slice(1..3), BytesSpan {
-        index: 1,
+        offset: 1,
         line: 1,
         column: 1,
-        slice: b"oo"
+        fragment: b"oo"
     });
     assert_eq!(bytes_slice.slice(..3), BytesSpan {
-        index: 0,
+        offset: 0,
         line: 1,
         column: 0,
-        slice: b"foo"
+        fragment: b"foo"
     });
     assert_eq!(bytes_slice.slice(..), bytes_slice);
 }
@@ -87,8 +87,8 @@ fn it_should_calculate_columns_accurately_with_non_ascii_chars() {
     assert_eq!(s.slice(6..), LocatedSpan {
         line: 1,
         column: 2,
-        index: 6,
-        slice: "ジキ"
+        offset: 6,
+        fragment: "ジキ"
     });
 }
 
