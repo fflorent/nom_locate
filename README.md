@@ -1,7 +1,13 @@
 # nom_locate
 A special input type for nom to locate tokens
 
+## Documentation
+
+The documentation of the crate is available [here](https://docs.rs/crates/nom_locate/).
+
 ## How to use it
+The crate provide the [`LocatedSpan` struct](https://docs.rs/crates/nom_locate/struct.LocatedSpan.html) that encapsulates the data. Look at the below example and the explanations:
+
 ````rust
 #[macro_use]
 extern crate nom;
@@ -18,7 +24,7 @@ struct Token<'a> {
 
 named!(parse_foobar( Span ) -> Token, do_parse!(
     take_until!("foo") >>
-    position: tag!("") >> // Little trick to capture the position
+    position: position!() >>
     foo: tag!("foo") >>
     bar: tag!("bar") >>
     (Token {
@@ -31,10 +37,72 @@ named!(parse_foobar( Span ) -> Token, do_parse!(
 fn main () {
     let input = Span::new("Lorem ipsum \n foobar");
     let output = parse_foobar(input);
+
     assert_eq!(output.unwrap().1.position, Span {
         offset: 14,
-        column: 1,
         line: 2,
+        column: 1,
+        fragment: ""
+    });
+}
+````
+
+### Import
+
+Import [nom](https://github.com/geal/nom) and nom_locate. You'd probably create [type alias](https://doc.rust-lang.org/book/type-aliases.html) for convenience so you don't have to specify the `fragment` type every time:
+
+````rust
+#[macro_use]
+extern crate nom;
+extern crate nom_locate;
+
+use nom_locate::LocatedSpan;
+type Span<'a> = LocatedSpan<&'a str>;
+````
+
+### Define the output structure
+
+The output structure of your parser may contain the position as a `Span` (which provides the `index`, `line` and `column` information to locate your token).
+
+````
+struct Token<'a> {
+    pub position: Span<'a>,
+    pub foo: String,
+    pub bar: String,
+}
+````
+
+### Create the parser
+
+The parser has to accept a `Span` as an input. You may use `position!()` in your nom parser, in order to capture the location of your token:
+
+````rust
+named!(parse_foobar( Span ) -> Token, do_parse!(
+    take_until!("foo") >>
+    position: position!() >>
+    foo: tag!("foo") >>
+    bar: tag!("bar") >>
+    (Token {
+        position: position,
+        foo: foo.to_string(),
+        bar: bar.to_string()
+    })
+));
+````
+
+### Call the parser
+
+The parser returns a `nom::IResult<Token, _>` (hence the `unwrap().1`). The `position` property contains the `offset`, `line` and `column`.
+
+````rust
+fn main () {
+    let input = Span::new("Lorem ipsum \n foobar");
+    let output = parse_foobar(input);
+
+    assert_eq!(output.unwrap().1.position, Span {
+        offset: 14,
+        line: 2,
+        column: 1,
         fragment: ""
     });
 }

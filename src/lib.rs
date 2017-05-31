@@ -6,6 +6,7 @@
 //! ````
 //! #[macro_use]
 //! extern crate nom;
+//! #[macro_use(position)]
 //! extern crate nom_locate;
 //!
 //! use nom_locate::LocatedSpan;
@@ -19,7 +20,7 @@
 //!
 //! named!(parse_foobar( Span ) -> Token, do_parse!(
 //!     take_until!("foo") >>
-//!     position: tag!("") >> // Little trick to capture the position
+//!     position: position!() >>
 //!     foo: tag!("foo") >>
 //!     bar: tag!("bar") >>
 //!     (Token {
@@ -34,8 +35,8 @@
 //!     let output = parse_foobar(input);
 //!     assert_eq!(output.unwrap().1.position, Span {
 //!         offset: 14,
-//!         column: 1,
 //!         line: 2,
+//!         column: 1,
 //!         fragment: ""
 //!     });
 //! }
@@ -51,7 +52,7 @@ use std::ops::{Range, RangeTo, RangeFrom, RangeFull};
 use std::slice::Iter;
 use std::str::CharIndices;
 use std::str::Chars;
-use std::str::{FromStr, Utf8Error};
+use std::str::{FromStr};
 
 
 use memchr::Memchr;
@@ -80,6 +81,7 @@ pub struct LocatedSpan<T> {
     pub column: u32,
 
     /// The fragment that is spanned.
+    /// The fragment represents a part of the input of the parser.
     pub fragment: T,
 }
 
@@ -447,4 +449,13 @@ impl<T: ToString> ToString for LocatedSpan<T> {
     fn to_string(&self) -> String {
         self.fragment.to_string()
     }
+}
+
+/// Capture the position of the current fragment
+
+#[macro_export]
+macro_rules! position {
+    ($input:expr,) => (
+        tag!($input, "")
+     );
 }
