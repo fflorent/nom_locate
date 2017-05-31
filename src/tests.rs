@@ -13,7 +13,6 @@ fn it_should_call_new_for_u8_successfully() {
     let output = BytesSpan {
         offset : 0,
         line  : 1,
-        column: 0,
         fragment : input
     };
 
@@ -26,7 +25,6 @@ fn it_should_call_new_for_str_successfully() {
     let output = StrSpan {
         offset : 0,
         line  : 1,
-        column: 0,
         fragment : input
     };
 
@@ -39,19 +37,16 @@ fn it_should_slice_for_str() {
     assert_eq!(str_slice.slice(1..), StrSpan {
         offset: 1,
         line: 1,
-        column: 1,
         fragment: "oobar"
     });
     assert_eq!(str_slice.slice(1..3), StrSpan {
         offset: 1,
         line: 1,
-        column: 1,
         fragment: "oo"
     });
     assert_eq!(str_slice.slice(..3), StrSpan {
         offset: 0,
         line: 1,
-        column: 0,
         fragment: "foo"
     });
     assert_eq!(str_slice.slice(..), str_slice);
@@ -63,33 +58,46 @@ fn it_should_slice_for_u8() {
     assert_eq!(bytes_slice.slice(1..), BytesSpan {
         offset: 1,
         line: 1,
-        column: 1,
         fragment: b"oobar"
     });
     assert_eq!(bytes_slice.slice(1..3), BytesSpan {
         offset: 1,
         line: 1,
-        column: 1,
         fragment: b"oo"
     });
     assert_eq!(bytes_slice.slice(..3), BytesSpan {
         offset: 0,
         line: 1,
-        column: 0,
         fragment: b"foo"
     });
     assert_eq!(bytes_slice.slice(..), bytes_slice);
 }
 
 #[test]
+fn it_should_calculate_columns() {
+    let input = StrSpan::new("foo
+        bar");
+
+
+    let bar_idx = input.find_substring("bar").unwrap();
+    assert_eq!(input.slice(bar_idx..).get_column(), 9);
+}
+
+#[test]
 fn it_should_calculate_columns_accurately_with_non_ascii_chars() {
     let s = StrSpan::new("メカジキ");
-    assert_eq!(s.slice(6..), LocatedSpan {
-        line: 1,
-        column: 2,
-        offset: 6,
-        fragment: "ジキ"
-    });
+    assert_eq!(s.slice(6..).get_column_utf8(), Ok(3));
+}
+
+#[test]
+#[should_panic(expected = "offset is too big")]
+fn it_should_panic_when_getting_column_if_offset_is_too_big() {
+    let s = StrSpan {
+        offset: usize::max_value(),
+        fragment: "",
+        line: 1
+    };
+    s.get_column();
 }
 
 #[test]

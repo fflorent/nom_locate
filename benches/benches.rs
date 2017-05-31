@@ -79,7 +79,7 @@ fn bench_slice_columns_only(b: &mut Bencher) {
     let input = LocatedSpan::new(text.as_str());
 
     b.iter(|| {
-        input.slice(500..501);
+        input.slice(500..501).get_column_utf8().unwrap();
     });
 }
 
@@ -91,6 +91,6 @@ fn bench_slice_columns_only_for_ascii_text(b: &mut Bencher) {
 
     assert!(text.is_ascii());
     b.iter(|| {
-        input.slice(500..501);
+        input.slice(500..501).get_column();
     });
 }
