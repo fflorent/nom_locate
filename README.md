@@ -37,13 +37,13 @@ named!(parse_foobar( Span ) -> Token, do_parse!(
 fn main () {
     let input = Span::new("Lorem ipsum \n foobar");
     let output = parse_foobar(input);
-
-    assert_eq!(output.unwrap().1.position, Span {
+    let position = output.unwrap().1.position;
+    assert_eq!(position, Span {
         offset: 14,
         line: 2,
-        column: 1,
         fragment: ""
     });
+    assert_eq!(position.get_column(), 2);
 }
 ````
 
@@ -98,12 +98,12 @@ The parser returns a `nom::IResult<Token, _>` (hence the `unwrap().1`). The `pos
 fn main () {
     let input = Span::new("Lorem ipsum \n foobar");
     let output = parse_foobar(input);
-
-    assert_eq!(output.unwrap().1.position, Span {
+    let position = output.unwrap().1.position;
+    assert_eq!(position, Span {
         offset: 14,
         line: 2,
-        column: 1,
         fragment: ""
     });
+    assert_eq!(position.get_column(), 2);
 }
 ````
