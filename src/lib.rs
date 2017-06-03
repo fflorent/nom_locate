@@ -3,6 +3,8 @@
 //! The source code is available on [Github](https://github.com/fflorent/nom_locate)
 //!
 //! ## How to use it
+//! The explanations are given in the [README](https://github.com/fflorent/nom_locate/blob/master/README.md) of the Github repository. You may also consult the [FAQ](https://github.com/fflorent/nom_locate/blob/master/FAQ.md).
+//!
 //! ````
 //! #[macro_use]
 //! extern crate nom;
@@ -252,12 +254,12 @@ impl_input_iter!(&'a [u8], &'a u8, u8, Enumerate<Iter<'a, Self::RawItem>>,
 /// ````ignore
 /// #[macro_use]
 /// extern crate nom_locate;
-/// compare_impl!(&'b str, &'a str);
-/// compare_impl!(&'b [u8], &'a [u8]);
-/// compare_impl!(&'b [u8], &'a str);
+/// impl_compare!(&'b str, &'a str);
+/// impl_compare!(&'b [u8], &'a [u8]);
+/// impl_compare!(&'b [u8], &'a str);
 /// ````
 #[macro_export]
-macro_rules! compare_impl {
+macro_rules! impl_compare {
     ( $fragment_type:ty, $compare_to_type:ty ) => {
         impl<'a,'b> Compare<$compare_to_type> for LocatedSpan<$fragment_type> {
             #[inline(always)]
@@ -273,13 +275,13 @@ macro_rules! compare_impl {
     }
 }
 
-compare_impl!(&'b str, &'a str);
-compare_impl!(&'b [u8], &'a [u8]);
-compare_impl!(&'b [u8], &'a str);
+impl_compare!(&'b str, &'a str);
+impl_compare!(&'b [u8], &'a [u8]);
+impl_compare!(&'b [u8], &'a str);
 
 /// Implement nom::Slice for a specific fragment type and range type.
 ///
-/// **You'd probably better use `slice_ranges_impl`**,
+/// **You'd probably better use impl_`slice_ranges`**,
 /// unless you use a specific Range.
 ///
 /// # Parameters
@@ -295,18 +297,18 @@ compare_impl!(&'b [u8], &'a str);
 /// extern crate nom_locate;
 ///
 /// #[macro_export]
-/// macro_rules! slice_ranges_impl {
+/// macro_rules! impl_slice_ranges {
 ///     ( $fragment_type:ty ) => {
-///         slice_range_impl! {$fragment_type, Range<usize>}
-///         slice_range_impl! {$fragment_type, RangeTo<usize>}
-///         slice_range_impl! {$fragment_type, RangeFrom<usize>}
-///         slice_range_impl! {$fragment_type, RangeFull}
+///         impl_slice_range! {$fragment_type, Range<usize>}
+///         impl_slice_range! {$fragment_type, RangeTo<usize>}
+///         impl_slice_range! {$fragment_type, RangeFrom<usize>}
+///         impl_slice_range! {$fragment_type, RangeFull}
 ///     }
 /// }
 ///
 /// ````
 #[macro_export]
-macro_rules! slice_range_impl {
+macro_rules! impl_slice_range {
     ( $fragment_type:ty, $range_type:ty ) => {
         impl<'a> Slice<$range_type> for LocatedSpan<$fragment_type> {
             fn slice(&self, range: $range_type) -> Self {
@@ -358,21 +360,21 @@ macro_rules! slice_range_impl {
 /// #[macro_use]
 /// extern crate nom_locate;
 ///
-/// slice_ranges_impl! {&'a str}
-/// slice_ranges_impl! {&'a [u8]}
+/// impl_slice_ranges! {&'a str}
+/// impl_slice_ranges! {&'a [u8]}
 /// ````
 #[macro_export]
-macro_rules! slice_ranges_impl {
+macro_rules! impl_slice_ranges {
     ( $fragment_type:ty ) => {
-        slice_range_impl! {$fragment_type, Range<usize>}
-        slice_range_impl! {$fragment_type, RangeTo<usize>}
-        slice_range_impl! {$fragment_type, RangeFrom<usize>}
-        slice_range_impl! {$fragment_type, RangeFull}
+        impl_slice_range! {$fragment_type, Range<usize>}
+        impl_slice_range! {$fragment_type, RangeTo<usize>}
+        impl_slice_range! {$fragment_type, RangeFrom<usize>}
+        impl_slice_range! {$fragment_type, RangeFull}
     }
 }
 
-slice_ranges_impl! {&'a str}
-slice_ranges_impl! {&'a [u8]}
+impl_slice_ranges! {&'a str}
+impl_slice_ranges! {&'a [u8]}
 
 /// Implement nom::FindToken for a specific token type.
 ///
@@ -388,16 +390,16 @@ slice_ranges_impl! {&'a [u8]}
 /// #[macro_use]
 /// extern crate nom_locate;
 ///
-/// find_token_impl! { char, &'a str}
+/// impl_find_token! { char, &'a str}
 ///
-/// find_token_impl! { u8, &'a str}
-/// find_token_impl! { &'b u8, &'a str}
+/// impl_find_token! { u8, &'a str}
+/// impl_find_token! { &'b u8, &'a str}
 ///
-/// find_token_impl! { u8, &'a [u8]}
-/// find_token_impl! { &'b u8, &'a [u8]}
+/// impl_find_token! { u8, &'a [u8]}
+/// impl_find_token! { &'b u8, &'a [u8]}
 /// ````
 #[macro_export]
-macro_rules! find_token_impl {
+macro_rules! impl_find_token {
     ( $for_type:ty, $fragment_type:ty) => {
         impl<'a, 'b> FindToken<LocatedSpan<$fragment_type>> for $for_type {
             fn find_token(&self, input: LocatedSpan<$fragment_type>) -> bool {
@@ -407,13 +409,13 @@ macro_rules! find_token_impl {
     }
 }
 
-find_token_impl! { char, &'a str}
+impl_find_token! { char, &'a str}
 
-find_token_impl! { u8, &'a str}
-find_token_impl! { &'b u8, &'a str}
+impl_find_token! { u8, &'a str}
+impl_find_token! { &'b u8, &'a str}
 
-find_token_impl! { u8, &'a [u8]}
-find_token_impl! { &'b u8, &'a [u8]}
+impl_find_token! { u8, &'a [u8]}
+impl_find_token! { &'b u8, &'a [u8]}
 
 
 impl<'a, T> FindSubstring<&'a str> for LocatedSpan<T>
@@ -445,11 +447,11 @@ impl<R: FromStr, T> ParseTo<R> for LocatedSpan<T>
 /// #[macro_use]
 /// extern crate nom_locate;
 ///
-/// offset_impl! {&'a str}
-/// offset_impl! {&'a [u8]}
+/// impl_offset! {&'a str}
+/// impl_offset! {&'a [u8]}
 /// ````
 #[macro_export]
-macro_rules! offset_impl {
+macro_rules! impl_offset {
     ( $fragment_type:ty ) => {
         #[cfg(not(feature = "core"))]
         impl<'a> Offset for LocatedSpan<$fragment_type> {
@@ -463,8 +465,8 @@ macro_rules! offset_impl {
     }
 }
 
-offset_impl! {&'a str}
-offset_impl! {&'a [u8]}
+impl_offset! {&'a str}
+impl_offset! {&'a [u8]}
 
 impl<T: ToString> ToString for LocatedSpan<T> {
     fn to_string(&self) -> String {
