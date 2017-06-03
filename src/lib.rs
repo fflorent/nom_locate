@@ -1,3 +1,49 @@
+//! nom_locate, a special input type to locate tokens
+//!
+//! The source code is available on [Github](https://github.com/fflorent/nom_locate)
+//!
+//! ## How to use it
+//! The explanations are given in the [README](https://github.com/fflorent/nom_locate/blob/master/README.md) of the Github repository. You may also consult the [FAQ](https://github.com/fflorent/nom_locate/blob/master/FAQ.md).
+//!
+//! ````
+//! #[macro_use]
+//! extern crate nom;
+//! #[macro_use(position)]
+//! extern crate nom_locate;
+//!
+//! use nom_locate::LocatedSpan;
+//! type Span<'a> = LocatedSpan<&'a str>;
+//!
+//! struct Token<'a> {
+//!     pub position: Span<'a>,
+//!     pub foo: String,
+//!     pub bar: String,
+//! }
+//!
+//! named!(parse_foobar( Span ) -> Token, do_parse!(
+//!     take_until!("foo") >>
+//!     position: position!() >>
+//!     foo: tag!("foo") >>
+//!     bar: tag!("bar") >>
+//!     (Token {
+//!         position: position,
+//!         foo: foo.to_string(),
+//!         bar: bar.to_string()
+//!     })
+//! ));
+//!
+//! fn main () {
+//!     let input = Span::new("Lorem ipsum \n foobar");
+//!     let output = parse_foobar(input);
+//!     let position = output.unwrap().1.position;
+//!     assert_eq!(position, Span {
+//!         offset: 14,
+//!         line: 2,
+//!         fragment: ""
+//!     });
+//!     assert_eq!(position.get_column(), 2);
+//! }
+//! ````
 extern crate nom;
 extern crate memchr;
 
@@ -7,10 +53,7 @@ mod tests;
 use std::iter::Enumerate;
 use std::ops::{Range, RangeTo, RangeFrom, RangeFull};
 use std::slice::Iter;
-use std::str::CharIndices;
-use std::str::Chars;
-use std::str::{FromStr, Utf8Error};
-
+use std::str::{CharIndices, Chars, FromStr, Utf8Error};
 
 use memchr::Memchr;
 use nom::{
@@ -32,21 +75,18 @@ pub struct LocatedSpan<T> {
     /// parser. It starts at line 1.
     pub line: u32,
 
-    /// The column number of the fragment relatively to the input of the
-    /// parser. It starts at column 0.
-    // FIXME allow starting at 1
-    pub column: u32,
-
     /// The fragment that is spanned.
+    /// The fragment represents a part of the input of the parser.
     pub fragment: T,
 }
 
-impl<T> LocatedSpan<T> {
+impl<T: AsBytes> LocatedSpan<T> {
 
-    /// Create a span for a particular input with default `offset`,
-    /// `line`, and `column` values.
+    /// Create a span for a particular input with default `offset` and
+    /// `line` values. You can compute the column through the `get_column` or `get_column_utf8`
+    /// methods.
     ///
-    /// `offset` starts at 0, `line` starts at 1, and `column` starts at 0.
+    /// `offset` starts at 0, `line` starts at 1, and `column` starts at 1.
     ///
     /// # Example of use
     ///
@@ -57,19 +97,87 @@ impl<T> LocatedSpan<T> {
     /// # fn main() {
     /// let span = LocatedSpan::new(b"foobar");
     ///
-    /// assert_eq!(span.offset,     0);
-    /// assert_eq!(span.line,       1);
-    /// assert_eq!(span.column,     0);
-    /// assert_eq!(span.fragment,   &b"foobar"[..]);
+    /// assert_eq!(span.offset,         0);
+    /// assert_eq!(span.line,           1);
+    /// assert_eq!(span.get_column(),   1);
+    /// assert_eq!(span.fragment,       &b"foobar"[..]);
     /// # }
     /// ```
     pub fn new(program: T) -> LocatedSpan<T> {
          LocatedSpan {
              line: 1,
-             column: 0,
              offset: 0,
              fragment: program
          }
+    }
+
+    fn get_columns_and_bytes_before(&self) -> (usize, &[u8]) {
+        let self_bytes = self.fragment.as_bytes();
+        let self_ptr = self_bytes.as_ptr();
+        let before_self = unsafe {
+            assert!(self.offset <= isize::max_value() as usize, "offset is too big");
+            let orig_input_ptr = self_ptr.offset(-(self.offset as isize));
+            std::slice::from_raw_parts(orig_input_ptr, self.offset)
+        };
+
+        let column = match memchr::memrchr(b'\n', before_self) {
+            None => self.offset + 1,
+            Some(pos) => {
+                self.offset - pos
+            }
+        };
+
+        (column, &before_self[self.offset - (column - 1)..])
+    }
+
+    /// Return the column index, assuming 1 byte = 1 column.
+    ///
+    /// Use it for ascii text, or use get_column_utf8 for UTF8.
+    ///
+    /// # Example of use
+    /// ```
+    ///
+    /// # extern crate nom_locate;
+    /// # extern crate nom;
+    /// # use nom_locate::LocatedSpan;
+    /// # use nom::Slice;
+    /// #
+    /// # fn main() {
+    /// let span = LocatedSpan::new("foobar");
+    ///
+    /// assert_eq!(span.slice(3..).get_column(), 4);
+    /// # }
+    /// ```
+    pub fn get_column(&self) -> usize {
+        self.get_columns_and_bytes_before().0
+    }
+
+    /// Return the column index for a UTF8 text.
+    ///
+    /// **Caution**: that's a rather slow method. Prefer using
+    /// `get_column()` if your input is an ASCII-only text.
+    ///
+    /// # Example of use
+    /// ```
+    ///
+    /// # extern crate nom_locate;
+    /// # extern crate nom;
+    /// # use nom_locate::LocatedSpan;
+    /// # use nom::{Slice, FindSubstring};
+    /// #
+    /// # fn main() {
+    /// let span = LocatedSpan::new("メカジキ");
+    /// let indexOf3dKanji = span.find_substring("ジ").unwrap();
+    ///
+    /// assert_eq!(span.slice(indexOf3dKanji..).get_column(), 7);
+    /// assert_eq!(span.slice(indexOf3dKanji..).get_column_utf8(), Ok(3));
+    /// # }
+    /// ```
+    pub fn get_column_utf8(&self) -> Result<usize, Utf8Error> {
+        let before_self = self.get_columns_and_bytes_before().1;
+        Ok(std::str::from_utf8(before_self)?
+            .chars()
+            .count() + 1)
     }
 }
 
@@ -146,12 +254,12 @@ impl_input_iter!(&'a [u8], &'a u8, u8, Enumerate<Iter<'a, Self::RawItem>>,
 /// ````ignore
 /// #[macro_use]
 /// extern crate nom_locate;
-/// compare_impl!(&'b str, &'a str);
-/// compare_impl!(&'b [u8], &'a [u8]);
-/// compare_impl!(&'b [u8], &'a str);
+/// impl_compare!(&'b str, &'a str);
+/// impl_compare!(&'b [u8], &'a [u8]);
+/// impl_compare!(&'b [u8], &'a str);
 /// ````
 #[macro_export]
-macro_rules! compare_impl {
+macro_rules! impl_compare {
     ( $fragment_type:ty, $compare_to_type:ty ) => {
         impl<'a,'b> Compare<$compare_to_type> for LocatedSpan<$fragment_type> {
             #[inline(always)]
@@ -167,13 +275,13 @@ macro_rules! compare_impl {
     }
 }
 
-compare_impl!(&'b str, &'a str);
-compare_impl!(&'b [u8], &'a [u8]);
-compare_impl!(&'b [u8], &'a str);
+impl_compare!(&'b str, &'a str);
+impl_compare!(&'b [u8], &'a [u8]);
+impl_compare!(&'b [u8], &'a str);
 
 /// Implement nom::Slice for a specific fragment type and range type.
 ///
-/// **You'd probably better use `slice_ranges_impl`**,
+/// **You'd probably better use impl_`slice_ranges`**,
 /// unless you use a specific Range.
 ///
 /// # Parameters
@@ -189,18 +297,18 @@ compare_impl!(&'b [u8], &'a str);
 /// extern crate nom_locate;
 ///
 /// #[macro_export]
-/// macro_rules! slice_ranges_impl {
+/// macro_rules! impl_slice_ranges {
 ///     ( $fragment_type:ty ) => {
-///         slice_range_impl! {$fragment_type, Range<usize>}
-///         slice_range_impl! {$fragment_type, RangeTo<usize>}
-///         slice_range_impl! {$fragment_type, RangeFrom<usize>}
-///         slice_range_impl! {$fragment_type, RangeFull}
+///         impl_slice_range! {$fragment_type, Range<usize>}
+///         impl_slice_range! {$fragment_type, RangeTo<usize>}
+///         impl_slice_range! {$fragment_type, RangeFrom<usize>}
+///         impl_slice_range! {$fragment_type, RangeFull}
 ///     }
 /// }
 ///
 /// ````
 #[macro_export]
-macro_rules! slice_range_impl {
+macro_rules! impl_slice_range {
     ( $fragment_type:ty, $range_type:ty ) => {
         impl<'a> Slice<$range_type> for LocatedSpan<$fragment_type> {
             fn slice(&self, range: $range_type) -> Self {
@@ -211,7 +319,6 @@ macro_rules! slice_range_impl {
                 let consumed_len = self.fragment.offset(&next_fragment);
                 if consumed_len == 0 {
                     return LocatedSpan {
-                        column: self.column,
                         line: self.line,
                         offset: self.offset,
                         fragment: next_fragment
@@ -222,20 +329,11 @@ macro_rules! slice_range_impl {
                 let next_offset = self.offset + consumed_len;
 
                 let consumed_as_bytes = consumed.as_bytes();
-                let mut iter = Memchr::new(b'\n', consumed_as_bytes);
-                let (number_of_lines, next_column) = match iter.next_back() {
-                    None => (0, self.column + consumed.count_utf8() as u32),
-                    Some(position) => {
-                        let next_column = self.fragment.slice(position..consumed_len)
-                            .count_utf8() as u32;
-
-                        (iter.count() as u32 + 1, next_column)
-                    }
-                };
+                let iter = Memchr::new(b'\n', consumed_as_bytes);
+                let number_of_lines = iter.count() as u32;
                 let next_line = self.line + number_of_lines;
 
                 LocatedSpan {
-                    column: next_column,
                     line: next_line,
                     offset: next_offset,
                     fragment: next_fragment
@@ -262,21 +360,21 @@ macro_rules! slice_range_impl {
 /// #[macro_use]
 /// extern crate nom_locate;
 ///
-/// slice_ranges_impl! {&'a str}
-/// slice_ranges_impl! {&'a [u8]}
+/// impl_slice_ranges! {&'a str}
+/// impl_slice_ranges! {&'a [u8]}
 /// ````
 #[macro_export]
-macro_rules! slice_ranges_impl {
+macro_rules! impl_slice_ranges {
     ( $fragment_type:ty ) => {
-        slice_range_impl! {$fragment_type, Range<usize>}
-        slice_range_impl! {$fragment_type, RangeTo<usize>}
-        slice_range_impl! {$fragment_type, RangeFrom<usize>}
-        slice_range_impl! {$fragment_type, RangeFull}
+        impl_slice_range! {$fragment_type, Range<usize>}
+        impl_slice_range! {$fragment_type, RangeTo<usize>}
+        impl_slice_range! {$fragment_type, RangeFrom<usize>}
+        impl_slice_range! {$fragment_type, RangeFull}
     }
 }
 
-slice_ranges_impl! {&'a str}
-slice_ranges_impl! {&'a [u8]}
+impl_slice_ranges! {&'a str}
+impl_slice_ranges! {&'a [u8]}
 
 /// Implement nom::FindToken for a specific token type.
 ///
@@ -292,16 +390,16 @@ slice_ranges_impl! {&'a [u8]}
 /// #[macro_use]
 /// extern crate nom_locate;
 ///
-/// find_token_impl! { char, &'a str}
+/// impl_find_token! { char, &'a str}
 ///
-/// find_token_impl! { u8, &'a str}
-/// find_token_impl! { &'b u8, &'a str}
+/// impl_find_token! { u8, &'a str}
+/// impl_find_token! { &'b u8, &'a str}
 ///
-/// find_token_impl! { u8, &'a [u8]}
-/// find_token_impl! { &'b u8, &'a [u8]}
+/// impl_find_token! { u8, &'a [u8]}
+/// impl_find_token! { &'b u8, &'a [u8]}
 /// ````
 #[macro_export]
-macro_rules! find_token_impl {
+macro_rules! impl_find_token {
     ( $for_type:ty, $fragment_type:ty) => {
         impl<'a, 'b> FindToken<LocatedSpan<$fragment_type>> for $for_type {
             fn find_token(&self, input: LocatedSpan<$fragment_type>) -> bool {
@@ -311,13 +409,13 @@ macro_rules! find_token_impl {
     }
 }
 
-find_token_impl! { char, &'a str}
+impl_find_token! { char, &'a str}
 
-find_token_impl! { u8, &'a str}
-find_token_impl! { &'b u8, &'a str}
+impl_find_token! { u8, &'a str}
+impl_find_token! { &'b u8, &'a str}
 
-find_token_impl! { u8, &'a [u8]}
-find_token_impl! { &'b u8, &'a [u8]}
+impl_find_token! { u8, &'a [u8]}
+impl_find_token! { &'b u8, &'a [u8]}
 
 
 impl<'a, T> FindSubstring<&'a str> for LocatedSpan<T>
@@ -349,11 +447,11 @@ impl<R: FromStr, T> ParseTo<R> for LocatedSpan<T>
 /// #[macro_use]
 /// extern crate nom_locate;
 ///
-/// offset_impl! {&'a str}
-/// offset_impl! {&'a [u8]}
+/// impl_offset! {&'a str}
+/// impl_offset! {&'a [u8]}
 /// ````
 #[macro_export]
-macro_rules! offset_impl {
+macro_rules! impl_offset {
     ( $fragment_type:ty ) => {
         #[cfg(not(feature = "core"))]
         impl<'a> Offset for LocatedSpan<$fragment_type> {
@@ -367,42 +465,20 @@ macro_rules! offset_impl {
     }
 }
 
-offset_impl! {&'a str}
-offset_impl! {&'a [u8]}
-
-/// Trait to count utf8 chars
-pub trait CountUtf8Chars {
-    /// Return the number of UTF-8 chars.
-    ///
-    /// # Example of use
-    /// ````
-    /// # extern crate nom_locate;
-    /// use nom_locate::CountUtf8Chars;
-    ///
-    /// # fn main() {
-    /// assert_eq!("un œuf éclot".len(), 14); // That's not the number of characters
-    /// assert_eq!("un œuf éclot".count_utf8(), 12);
-    /// # }
-    /// ````
-    fn count_utf8(&self) -> usize;
-}
-
-impl<'a> CountUtf8Chars for &'a str {
-    fn count_utf8(&self) -> usize {
-        self.chars().count()
-    }
-}
-
-impl<'a> CountUtf8Chars for &'a [u8] {
-    fn count_utf8(&self) -> usize {
-        std::str::from_utf8(self)
-            .expect("The slice should contain UTF-8 chars only")
-            .count_utf8()
-    }
-}
+impl_offset! {&'a str}
+impl_offset! {&'a [u8]}
 
 impl<T: ToString> ToString for LocatedSpan<T> {
     fn to_string(&self) -> String {
         self.fragment.to_string()
     }
+}
+
+/// Capture the position of the current fragment
+
+#[macro_export]
+macro_rules! position {
+    ($input:expr,) => (
+        tag!($input, "")
+     );
 }
