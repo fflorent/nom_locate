@@ -17,7 +17,7 @@ To do so, all you need is to ensure that your input type implements these traits
 
 And ensure that what represents a char in your input type implements `nom::FindToken`.
 
-Then you may use all the `impl_*` macros exposed by the library (see the [crate documentation](https://docs.rs/crates/nom_locate/)).
+Then you may use all the `impl_*` macros exposed by the library (see the [crate documentation](https://docs.rs/nom_locate/)).
 
 ## `get_column` is not accurate
 

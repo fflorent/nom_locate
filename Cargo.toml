@@ -5,7 +5,7 @@ authors = ["Florent FAYOLLE <florent.fayolle69@gmail.com>"]
 license = "MIT"
 description = "A special input type for nom to locate tokens"
 
-documentation = "https://docs.rs/crates/nom_locate/"
+documentation = "https://docs.rs/nom_locate/"
 homepage = "https://github.com/fflorent/nom_locate"
 repository = "https://github.com/fflorent/nom_locate"
 readme = "README.md"

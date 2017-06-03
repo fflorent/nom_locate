@@ -3,10 +3,10 @@ A special input type for nom to locate tokens
 
 ## Documentation
 
-The documentation of the crate is available [here](https://docs.rs/crates/nom_locate/).
+The documentation of the crate is available [here](https://docs.rs/nom_locate/).
 
 ## How to use it
-The crate provide the [`LocatedSpan` struct](https://docs.rs/crates/nom_locate/struct.LocatedSpan.html) that encapsulates the data. Look at the below example and the explanations:
+The crate provide the [`LocatedSpan` struct](https://docs.rs/nom_locate/struct.LocatedSpan.html) that encapsulates the data. Look at the below example and the explanations:
 
 ````rust
 #[macro_use]
