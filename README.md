@@ -49,7 +49,7 @@ fn main () {
 
 ### Import
 
-Import [nom](https://github.com/geal/nom) and nom_locate. You'd probably create [type alias](https://doc.rust-lang.org/book/type-aliases.html) for convenience so you don't have to specify the `fragment` type every time:
+Import [nom](https://github.com/geal/nom) and nom_locate.
 
 ````rust
 #[macro_use]
@@ -57,6 +57,11 @@ extern crate nom;
 extern crate nom_locate;
 
 use nom_locate::LocatedSpan;
+````
+
+Also you'd probably create [type alias](https://doc.rust-lang.org/book/type-aliases.html) for convenience so you don't have to specify the `fragment` type every time:
+
+````rust
 type Span<'a> = LocatedSpan<&'a str>;
 ````
 
@@ -64,7 +69,7 @@ type Span<'a> = LocatedSpan<&'a str>;
 
 The output structure of your parser may contain the position as a `Span` (which provides the `index`, `line` and `column` information to locate your token).
 
-````
+````rust
 struct Token<'a> {
     pub position: Span<'a>,
     pub foo: String,
