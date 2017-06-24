@@ -225,6 +225,7 @@ macro_rules! impl_input_iter {
             fn iter_elements(&self) -> Self::IterElem {
               self.fragment.iter_elements()
             }
+            #[inline]
             fn position<P>(&self, predicate: P) -> Option<usize> where P: Fn(Self::RawItem) -> bool {
                 self.fragment.position(predicate)
             }
@@ -421,6 +422,7 @@ impl_find_token! { &'b u8, &'a [u8]}
 impl<'a, T> FindSubstring<&'a str> for LocatedSpan<T>
     where T: FindSubstring<&'a str> {
 
+    #[inline]
     fn find_substring(&self, substr: &'a str) -> Option<usize> {
         self.fragment.find_substring(substr)
     }
@@ -429,6 +431,7 @@ impl<'a, T> FindSubstring<&'a str> for LocatedSpan<T>
 impl<R: FromStr, T> ParseTo<R> for LocatedSpan<T>
     where T: ParseTo<R> {
 
+    #[inline]
     fn parse_to(&self) -> Option<R> {
         self.fragment.parse_to()
     }
@@ -469,6 +472,7 @@ impl_offset! {&'a str}
 impl_offset! {&'a [u8]}
 
 impl<T: ToString> ToString for LocatedSpan<T> {
+    #[inline]
     fn to_string(&self) -> String {
         self.fragment.to_string()
     }
