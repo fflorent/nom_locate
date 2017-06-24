@@ -1,6 +1,6 @@
 [package]
 name = "nom_locate"
-version = "0.0.0"
+version = "0.1.0"
 authors = ["Florent FAYOLLE <florent.fayolle69@gmail.com>"]
 license = "MIT"
 description = "A special input type for nom to locate tokens"
