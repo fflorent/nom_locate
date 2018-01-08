@@ -11,8 +11,7 @@ use nom::Slice;
 use test::Bencher;
 
 // Lorem ipsum is boring. Let's quote Camus' Plague.
-const TEXT: &str =
-"Écoutant, en effet, les cris d’allégresse qui montaient de la ville,
+const TEXT: &str = "Écoutant, en effet, les cris d’allégresse qui montaient de la ville,
 Rieux se souvenait que cette allégresse était toujours menacée.
 Car il savait ce que cette foule en joie ignorait,
 et qu’on peut lire dans les livres,
@@ -24,8 +23,7 @@ et que, peut-être, le jour viendrait où,
 pour le malheur et l’enseignement des hommes,
 la peste réveillerait ses rats et les enverrait mourir dans une cité heureuse.";
 
-const TEXT_ASCII: &str =
-"Ecoutant, en effet, les cris d'allegresse qui montaient de la ville,
+const TEXT_ASCII: &str = "Ecoutant, en effet, les cris d'allegresse qui montaient de la ville,
 Rieux se souvenait que cette allegresse etait toujours menacee.
 Car il savait ce que cette foule en joie ignorait,
 et qu'on peut lire dans les livres,
@@ -79,12 +77,13 @@ fn bench_slice_columns_only(b: &mut Bencher) {
     let input = LocatedSpan::new(text.as_str());
 
     b.iter(|| {
-        input.slice(500..501).get_column_utf8().unwrap();
+        input.slice(500..501).get_utf8_column();
     });
 }
 
 #[bench]
 fn bench_slice_columns_only_for_ascii_text(b: &mut Bencher) {
+    #[allow(unused)]
     use std::ascii::AsciiExt;
     let text = TEXT_ASCII.replace("\n", "");
     let input = LocatedSpan::new(text.as_str());
