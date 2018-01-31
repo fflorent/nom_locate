@@ -1,19 +1,16 @@
 use super::LocatedSpan;
-use nom::{
-    Slice, InputIter, Compare, CompareResult,
-    FindToken, FindSubstring, ParseTo, Offset
-};
+use nom::{Compare, CompareResult, FindSubstring, FindToken, InputIter, Offset, ParseTo, Slice};
 
 type StrSpan<'a> = LocatedSpan<&'a str>;
 type BytesSpan<'a> = LocatedSpan<&'a [u8]>;
 
 #[test]
 fn it_should_call_new_for_u8_successfully() {
-    let input  = &b"foobar"[..];
+    let input = &b"foobar"[..];
     let output = BytesSpan {
-        offset : 0,
-        line  : 1,
-        fragment : input
+        offset: 0,
+        line: 1,
+        fragment: input,
     };
 
     assert_eq!(BytesSpan::new(input), output);
@@ -21,11 +18,11 @@ fn it_should_call_new_for_u8_successfully() {
 
 #[test]
 fn it_should_call_new_for_str_successfully() {
-    let input  = &"foobar"[..];
+    let input = &"foobar"[..];
     let output = StrSpan {
-        offset : 0,
-        line  : 1,
-        fragment : input
+        offset: 0,
+        line: 1,
+        fragment: input,
     };
 
     assert_eq!(StrSpan::new(input), output);
@@ -34,50 +31,69 @@ fn it_should_call_new_for_str_successfully() {
 #[test]
 fn it_should_slice_for_str() {
     let str_slice = StrSpan::new("foobar");
-    assert_eq!(str_slice.slice(1..), StrSpan {
-        offset: 1,
-        line: 1,
-        fragment: "oobar"
-    });
-    assert_eq!(str_slice.slice(1..3), StrSpan {
-        offset: 1,
-        line: 1,
-        fragment: "oo"
-    });
-    assert_eq!(str_slice.slice(..3), StrSpan {
-        offset: 0,
-        line: 1,
-        fragment: "foo"
-    });
+    assert_eq!(
+        str_slice.slice(1..),
+        StrSpan {
+            offset: 1,
+            line: 1,
+            fragment: "oobar",
+        }
+    );
+    assert_eq!(
+        str_slice.slice(1..3),
+        StrSpan {
+            offset: 1,
+            line: 1,
+            fragment: "oo",
+        }
+    );
+    assert_eq!(
+        str_slice.slice(..3),
+        StrSpan {
+            offset: 0,
+            line: 1,
+            fragment: "foo",
+        }
+    );
     assert_eq!(str_slice.slice(..), str_slice);
 }
 
 #[test]
 fn it_should_slice_for_u8() {
     let bytes_slice = BytesSpan::new(b"foobar");
-    assert_eq!(bytes_slice.slice(1..), BytesSpan {
-        offset: 1,
-        line: 1,
-        fragment: b"oobar"
-    });
-    assert_eq!(bytes_slice.slice(1..3), BytesSpan {
-        offset: 1,
-        line: 1,
-        fragment: b"oo"
-    });
-    assert_eq!(bytes_slice.slice(..3), BytesSpan {
-        offset: 0,
-        line: 1,
-        fragment: b"foo"
-    });
+    assert_eq!(
+        bytes_slice.slice(1..),
+        BytesSpan {
+            offset: 1,
+            line: 1,
+            fragment: b"oobar",
+        }
+    );
+    assert_eq!(
+        bytes_slice.slice(1..3),
+        BytesSpan {
+            offset: 1,
+            line: 1,
+            fragment: b"oo",
+        }
+    );
+    assert_eq!(
+        bytes_slice.slice(..3),
+        BytesSpan {
+            offset: 0,
+            line: 1,
+            fragment: b"foo",
+        }
+    );
     assert_eq!(bytes_slice.slice(..), bytes_slice);
 }
 
 #[test]
 fn it_should_calculate_columns() {
-    let input = StrSpan::new("foo
-        bar");
-
+    let input = StrSpan::new(
+        "foo
+        bar",
+    );
 
     let bar_idx = input.find_substring("bar").unwrap();
     assert_eq!(input.slice(bar_idx..).get_column(), 9);
@@ -86,7 +102,7 @@ fn it_should_calculate_columns() {
 #[test]
 fn it_should_calculate_columns_accurately_with_non_ascii_chars() {
     let s = StrSpan::new("メカジキ");
-    assert_eq!(s.slice(6..).get_column_utf8(), Ok(3));
+    assert_eq!(s.slice(6..).get_utf8_column(), 3);
 }
 
 #[test]
@@ -95,7 +111,7 @@ fn it_should_panic_when_getting_column_if_offset_is_too_big() {
     let s = StrSpan {
         offset: usize::max_value(),
         fragment: "",
-        line: 1
+        line: 1,
     };
     s.get_column();
 }
@@ -103,11 +119,14 @@ fn it_should_panic_when_getting_column_if_offset_is_too_big() {
 #[test]
 fn it_should_iterate_indices() {
     let str_slice = StrSpan::new("foobar");
-    assert_eq!(str_slice.iter_indices().collect::<Vec<(usize, char)>>(), vec![
-        (0, 'f'), (1, 'o'), (2, 'o'),
-        (3, 'b'), (4, 'a'), (5, 'r')
-    ]);
-    assert_eq!(StrSpan::new("").iter_indices().collect::<Vec<(usize, char)>>(),
+    assert_eq!(
+        str_slice.iter_indices().collect::<Vec<(usize, char)>>(),
+        vec![(0, 'f'), (1, 'o'), (2, 'o'), (3, 'b'), (4, 'a'), (5, 'r')]
+    );
+    assert_eq!(
+        StrSpan::new("")
+            .iter_indices()
+            .collect::<Vec<(usize, char)>>(),
         vec![]
     );
 }
@@ -115,10 +134,12 @@ fn it_should_iterate_indices() {
 #[test]
 fn it_should_iterate_elements() {
     let str_slice = StrSpan::new("foobar");
-    assert_eq!(str_slice.iter_elements().collect::<Vec<char>>(), vec![
-        'f', 'o', 'o', 'b', 'a', 'r'
-    ]);
-    assert_eq!(StrSpan::new("").iter_elements().collect::<Vec<char>>(),
+    assert_eq!(
+        str_slice.iter_elements().collect::<Vec<char>>(),
+        vec!['f', 'o', 'o', 'b', 'a', 'r']
+    );
+    assert_eq!(
+        StrSpan::new("").iter_elements().collect::<Vec<char>>(),
         vec![]
     );
 }
@@ -135,9 +156,14 @@ fn it_should_compare_elements() {
     assert_eq!(StrSpan::new("foobar").compare("foo"), CompareResult::Ok);
     assert_eq!(StrSpan::new("foobar").compare("bar"), CompareResult::Error);
     assert_eq!(StrSpan::new("foobar").compare("foobar"), CompareResult::Ok);
-    assert_eq!(StrSpan::new("foobar").compare_no_case("fooBar"), CompareResult::Ok);
-    assert_eq!(StrSpan::new("foobar").compare("foobarbaz"),
-       CompareResult::Incomplete);
+    assert_eq!(
+        StrSpan::new("foobar").compare_no_case("fooBar"),
+        CompareResult::Ok
+    );
+    assert_eq!(
+        StrSpan::new("foobar").compare("foobarbaz"),
+        CompareResult::Incomplete
+    );
 
     // FIXME: WTF! The line below doesn't compile unless we stop comparing
     // LocatedSpan<&[u8]> with &str
@@ -171,22 +197,27 @@ fn it_should_find_substring() {
 
 #[test]
 fn it_should_parse_to_string() {
-    assert_eq!(StrSpan::new("foobar").parse_to(), Some("foobar".to_string()));
-    assert_eq!(BytesSpan::new(b"foobar").parse_to(), Some("foobar".to_string()));
+    assert_eq!(
+        StrSpan::new("foobar").parse_to(),
+        Some("foobar".to_string())
+    );
+    assert_eq!(
+        BytesSpan::new(b"foobar").parse_to(),
+        Some("foobar".to_string())
+    );
 }
-
 
 // https://github.com/Geal/nom/blob/eee82832fafdfdd0505546d224caa466f7d39a15/src/util.rs#L710-L720
 #[test]
 fn it_should_calculate_offset_for_u8() {
-  let s = b"abcd123";
-  let a = &s[..];
-  let b = &a[2..];
-  let c = &a[..4];
-  let d = &a[3..5];
-  assert_eq!(a.offset(b), 2);
-  assert_eq!(a.offset(c), 0);
-  assert_eq!(a.offset(d), 3);
+    let s = b"abcd123";
+    let a = &s[..];
+    let b = &a[2..];
+    let c = &a[..4];
+    let d = &a[3..5];
+    assert_eq!(a.offset(b), 2);
+    assert_eq!(a.offset(c), 0);
+    assert_eq!(a.offset(d), 3);
 }
 
 // https://github.com/Geal/nom/blob/eee82832fafdfdd0505546d224caa466f7d39a15/src/util.rs#L722-L732
