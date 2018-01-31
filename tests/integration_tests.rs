@@ -60,7 +60,7 @@ fn test_str_fragments<'a, F, T>(parser: F, input: T, positions: Vec<Position>)
             fragment: input.slice(pos.offset..cmp::min(pos.offset + pos.fragment_len, input.input_len()))
         };
         assert_eq!(output_item, &expected_item);
-        assert_eq!(output_item.get_column_utf8(), Ok(pos.column), "columns should be equal");
+        assert_eq!(output_item.get_utf8_column(), pos.column, "columns should be equal");
     }
 }
 
