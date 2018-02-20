@@ -186,7 +186,7 @@ impl<T: AsBytes> LocatedSpan<T> {
     /// ```
     pub fn get_utf8_column(&self) -> usize {
         let before_self = self.get_columns_and_bytes_before().1;
-        num_chars(before_self)+ 1
+        num_chars(before_self) + 1
     }
 
     /// Return the column index for UTF8 text. Return value is unspecified for non-utf8 text.
