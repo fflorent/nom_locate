@@ -9,15 +9,16 @@ license = "MIT"
 name = "nom_locate"
 readme = "README.md"
 repository = "https://github.com/fflorent/nom_locate"
-version = "0.3.0-beta.1"
+version = "0.3.0-beta.2"
 [badges.travis-ci]
 repository = "fflorent/nom_locate"
 
 [features]
 avx-accel = ["bytecount/avx-accel"]
 simd-accel = ["bytecount/simd-accel"]
+verbose-errors = ["nom/verbose-errors"]
 
 [dependencies]
 bytecount = "^0.3"
 memchr = ">=1.0.1, <3.0.0" # ^1.0.0 + ^2.0
-nom = "4.0.0-beta1"
+nom = "4.0.0-beta2"

@@ -65,7 +65,8 @@ use std::str::{CharIndices, Chars, FromStr};
 
 use memchr::Memchr;
 use nom::{AsBytes, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength,
-          Offset, ParseTo, Slice, InputTake, AtEof};
+          Offset, ParseTo, Slice, InputTake, InputTakeAtPosition, AtEof,
+          IResult, ErrorKind, Err, Context};
 use nom::types::{CompleteByteSlice, CompleteStr};
 use bytecount::{naive_num_chars, num_chars};
 
@@ -229,7 +230,6 @@ impl<T: AtEof> AtEof for LocatedSpan<T> {
     }
 }
 
-// TODO: Think about why this trait is here
 impl<T> InputTake for LocatedSpan<T> where Self: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> {
     fn take(&self, count: usize) -> Self {
         self.slice(..count)
@@ -237,6 +237,52 @@ impl<T> InputTake for LocatedSpan<T> where Self: Slice<RangeFrom<usize>> + Slice
 
     fn take_split(&self, count: usize) -> (Self, Self) {
         (self.slice(count..), self.slice(..count))
+    }
+}
+
+impl<T> InputTakeAtPosition for LocatedSpan<T>
+where
+    T: InputTakeAtPosition + InputLength,
+    Self: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Clone,
+{
+    type Item = <T as InputTakeAtPosition>::Item;
+
+    fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+    where
+        P: Fn(Self::Item) -> bool
+    {
+        self.fragment.split_at_position(predicate)
+            .map(|(_i, o)| {
+                let split = o.input_len();
+                (self.slice(split..), self.slice(..split))
+            })
+            .map_err(|e| {
+                match e {
+                    Err::Error(Context::Code(_, e)) |
+                    Err::Failure(Context::Code(_, e)) => Err::Error(Context::Code(self.clone(), e)),
+                    Err::Incomplete(needed) => Err::Incomplete(needed),
+                    _ => unimplemented!("nom_locate didn't think Err::List was used in InputTakeAtPosition"),
+                }
+            })
+    }
+
+    fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+    where
+        P: Fn(Self::Item) -> bool
+    {
+        self.fragment.split_at_position1(predicate, e)
+            .map(|(_i, o)| {
+                let split = o.input_len();
+                (self.slice(split..), self.slice(..split))
+            })
+            .map_err(|e| {
+                match e {
+                    Err::Error(Context::Code(_, e)) |
+                    Err::Failure(Context::Code(_, e)) => Err::Error(Context::Code(self.clone(), e)),
+                    Err::Incomplete(needed) => Err::Incomplete(needed),
+                    _ => unimplemented!("nom_locate didn't think Err::List was used in InputTakeAtPosition"),
+                }
+            })
     }
 }
 
