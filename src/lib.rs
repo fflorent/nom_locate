@@ -544,39 +544,14 @@ where
     }
 }
 
-/// Implement nom::Offset for a specific fragment type.
-///
-/// # Parameters
-/// * `$fragment_type` - The LocatedSpan's `fragment` type
-///
-/// # Example of use
-///
-/// NB: This example is an extract from the nom_locate source code.
-///
-/// ````ignore
-/// #[macro_use]
-/// extern crate nom_locate;
-///
-/// impl_offset! {&'a str}
-/// impl_offset! {&'a [u8]}
-/// ````
-#[macro_export]
-macro_rules! impl_offset {
-    ( $fragment_type:ty ) => {
-        #[cfg(not(feature = "core"))]
-        impl<'a> Offset for LocatedSpan<$fragment_type> {
-            fn offset(&self, second: &LocatedSpan<$fragment_type>) -> usize {
-                    let fst = self.fragment.as_ptr();
-                    let snd = second.fragment.as_ptr();
+impl<T> Offset for LocatedSpan<T> {
+    fn offset(&self, second: &Self) -> usize {
+        let fst = self.offset;
+        let snd = second.offset;
 
-                    snd as usize - fst as usize
-            }
-        }
+        snd - fst
     }
 }
-
-impl_offset! {&'a str}
-impl_offset! {&'a [u8]}
 
 impl<T: ToString> ToString for LocatedSpan<T> {
     #[inline]
