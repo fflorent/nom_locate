@@ -605,6 +605,27 @@ impl_extend_into!(CompleteStr<'a>, char, String);
 impl_extend_into!(&'a [u8], u8, Vec<u8>);
 impl_extend_into!(CompleteByteSlice<'a>, u8, Vec<u8>);
 
+#[macro_export]
+macro_rules! impl_hex_display {
+    ($fragment_type:ty) => (
+		impl<'a> nom::HexDisplay for LocatedSpan<$fragment_type> {
+			fn to_hex(&self, chunk_size: usize) -> String {
+				self.fragment.to_hex(chunk_size)
+			}
+
+			fn to_hex_from(&self, chunk_size: usize, from: usize) -> String {
+				self.fragment.to_hex_from(chunk_size, from)
+			}
+		}
+	)
+}
+
+impl_hex_display!(&'a str);
+impl_hex_display!(CompleteStr<'a>);
+impl_hex_display!(&'a [u8]);
+impl_hex_display!(CompleteByteSlice<'a>);
+
+
 /// Capture the position of the current fragment
 
 #[macro_export]
