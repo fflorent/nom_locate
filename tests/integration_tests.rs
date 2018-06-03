@@ -110,6 +110,21 @@ fn find_substring<'a>(input: StrSpan<'a>, substr: &str) -> IResult<StrSpan<'a>, 
     }
 }
 
+#[test]
+fn test_escaped_string() {
+    use nom::Needed; // https://github.com/Geal/nom/issues/780
+    named!(string<StrSpan, String>, delimited!(
+        char!('"'),
+        escaped_transform!(call!(nom::alpha), '\\', nom::anychar),
+        char!('"')
+    ));
+
+    assert_eq!(string(LocatedSpan::new(CompleteStr("\"foo\\\"bar\""))), Ok((
+        LocatedSpan { offset: 10, line: 1, fragment: CompleteStr("") },
+        "foo\"bar".to_string()
+    )));
+}
+
 named!(plague<StrSpan, Vec<StrSpan> >, do_parse!(
     bacille: apply!(find_substring, "le bacille") >>
     bacille_pronouns: many0!(apply!(find_substring, "il ")) >>

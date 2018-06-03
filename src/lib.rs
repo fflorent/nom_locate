@@ -65,7 +65,7 @@ use std::str::{CharIndices, Chars, FromStr};
 
 use memchr::Memchr;
 use nom::{AsBytes, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength,
-          Offset, ParseTo, Slice, InputTake, InputTakeAtPosition, AtEof,
+          Offset, ParseTo, Slice, InputTake, InputTakeAtPosition, AtEof, ExtendInto,
           IResult, ErrorKind, Err, Context};
 use nom::types::{CompleteByteSlice, CompleteStr};
 use bytecount::{naive_num_chars, num_chars};
@@ -559,6 +559,51 @@ impl<T: ToString> ToString for LocatedSpan<T> {
         self.fragment.to_string()
     }
 }
+
+/// Implement nom::ExtendInto for a specific fragment type.
+///
+/// # Parameters
+/// * `$fragment_type` - The LocatedSpan's `fragment` type
+/// * `$item` - The type of the item being iterated (a reference for fragments of type `&[T]`).
+/// * `$extender` - The type of the Extended.
+///
+/// # Example of use
+///
+/// NB: This example is an extract from the nom_locate source code.
+///
+/// ````ignore
+/// #[macro_use]
+/// extern crate nom_locate;
+///
+/// impl_extend_into!(&'a str, char, String);
+/// impl_extend_into!(CompleteStr<'a>, char, String);
+/// impl_extend_into!(&'a [u8], u8, Vec<u8>);
+/// impl_extend_into!(CompleteByteSlice<'a>, u8, Vec<u8>);
+/// ````
+#[macro_export]
+macro_rules! impl_extend_into {
+    ($fragment_type:ty, $item:ty, $extender:ty) => (
+        impl<'a> ExtendInto for LocatedSpan<$fragment_type> {
+            type Item     = $item;
+            type Extender = $extender;
+
+            #[inline]
+            fn new_builder(&self) -> Self::Extender {
+                self.fragment.new_builder()
+            }
+
+            #[inline]
+            fn extend_into(&self, acc: &mut Self::Extender) {
+                self.fragment.extend_into(acc)
+            }
+        }
+    )
+}
+
+impl_extend_into!(&'a str, char, String);
+impl_extend_into!(CompleteStr<'a>, char, String);
+impl_extend_into!(&'a [u8], u8, Vec<u8>);
+impl_extend_into!(CompleteByteSlice<'a>, u8, Vec<u8>);
 
 /// Capture the position of the current fragment
 
