@@ -1,5 +1,5 @@
 [package]
-authors = ["Florent FAYOLLE <florent.fayolle69@gmail.com>"]
+authors = ["Florent FAYOLLE <florent.fayolle69@gmail.com>", "Christopher Durham <cad97@cad97.com>", "Valentin Lorentz <progval+git@progval.net>"]
 categories = ["parsing"]
 description = "A special input type for nom to locate tokens"
 documentation = "https://docs.rs/nom_locate/"
