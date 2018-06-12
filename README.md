@@ -16,10 +16,12 @@ The crate provide the [`LocatedSpan` struct](https://docs.rs/nom_locate/struct.L
 ````rust
 #[macro_use]
 extern crate nom;
+#[macro_use]
 extern crate nom_locate;
 
+use nom::types::CompleteStr;
 use nom_locate::LocatedSpan;
-type Span<'a> = LocatedSpan<&'a str>;
+type Span<'a> = LocatedSpan<CompleteStr<'a>>;
 
 struct Token<'a> {
     pub position: Span<'a>,
@@ -40,13 +42,13 @@ named!(parse_foobar( Span ) -> Token, do_parse!(
 ));
 
 fn main () {
-    let input = Span::new("Lorem ipsum \n foobar");
+    let input = Span::new(CompleteStr("Lorem ipsum \n foobar"));
     let output = parse_foobar(input);
     let position = output.unwrap().1.position;
     assert_eq!(position, Span {
         offset: 14,
         line: 2,
-        fragment: ""
+        fragment: CompleteStr("")
     });
     assert_eq!(position.get_column(), 2);
 }
@@ -67,8 +69,10 @@ use nom_locate::LocatedSpan;
 Also you'd probably create [type alias](https://doc.rust-lang.org/book/type-aliases.html) for convenience so you don't have to specify the `fragment` type every time:
 
 ````rust
-type Span<'a> = LocatedSpan<&'a str>;
+type Span = LocatedSpan<CompleteStr>;
 ````
+
+Note you'd better in most case use [CompleteStr](https://docs.rs/nom/4.0.0/nom/types/struct.CompleteStr.html) in order to optimize your parser.
 
 ### Define the output structure
 

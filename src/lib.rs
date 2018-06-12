@@ -15,11 +15,12 @@
 //! ````
 //! #[macro_use]
 //! extern crate nom;
-//! #[macro_use(position)]
+//! #[macro_use]
 //! extern crate nom_locate;
 //!
+//! use nom::types::CompleteStr;
 //! use nom_locate::LocatedSpan;
-//! type Span<'a> = LocatedSpan<&'a str>;
+//! type Span<'a> = LocatedSpan<CompleteStr<'a>>;
 //!
 //! struct Token<'a> {
 //!     pub position: Span<'a>,
@@ -40,13 +41,13 @@
 //! ));
 //!
 //! fn main () {
-//!     let input = Span::new("Lorem ipsum \n foobar");
+//!     let input = Span::new(CompleteStr("Lorem ipsum \n foobar"));
 //!     let output = parse_foobar(input);
 //!     let position = output.unwrap().1.position;
 //!     assert_eq!(position, Span {
 //!         offset: 14,
 //!         line: 2,
-//!         fragment: ""
+//!         fragment: CompleteStr("")
 //!     });
 //!     assert_eq!(position.get_column(), 2);
 //! }
