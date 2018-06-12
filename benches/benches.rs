@@ -83,6 +83,7 @@ fn bench_slice_columns_only(b: &mut Bencher) {
 
 #[bench]
 fn bench_slice_columns_only_for_ascii_text(b: &mut Bencher) {
+    #[allow(unused)]
     use std::ascii::AsciiExt;
     let text = TEXT_ASCII.replace("\n", "");
     let input = LocatedSpan::new(text.as_str());

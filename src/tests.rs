@@ -173,18 +173,19 @@ fn it_should_compare_elements() {
 }
 
 #[test]
+#[allow(unused_parens)]
 fn it_should_find_token() {
-    assert!('a'.find_token(StrSpan::new("foobar")));
-    assert!(b'a'.find_token(StrSpan::new("foobar")));
-    assert!(&(b'a').find_token(StrSpan::new("foobar")));
-    assert!(!'c'.find_token(StrSpan::new("foobar")));
-    assert!(!b'c'.find_token(StrSpan::new("foobar")));
-    assert!(!(&b'c').find_token(StrSpan::new("foobar")));
+    assert!(StrSpan::new("foobar").find_token('a'));
+    assert!(StrSpan::new("foobar").find_token(b'a'));
+    assert!(StrSpan::new("foobar").find_token(&(b'a')));
+    assert!(!StrSpan::new("foobar").find_token('c'));
+    assert!(!StrSpan::new("foobar").find_token(b'c'));
+    assert!(!StrSpan::new("foobar").find_token((&b'c')));
 
-    assert!(b'a'.find_token(BytesSpan::new(b"foobar")));
-    assert!(&(b'a').find_token(BytesSpan::new(b"foobar")));
-    assert!(!b'c'.find_token(BytesSpan::new(b"foobar")));
-    assert!(!(&b'c').find_token(BytesSpan::new(b"foobar")));
+    assert!(BytesSpan::new(b"foobar").find_token(b'a'));
+    assert!(BytesSpan::new(b"foobar").find_token(&(b'a')));
+    assert!(!BytesSpan::new(b"foobar").find_token(b'c'));
+    assert!(!BytesSpan::new(b"foobar").find_token((&b'c')));
 }
 
 #[test]

@@ -58,14 +58,16 @@ extern crate nom;
 #[cfg(test)]
 mod tests;
 
-use std::iter::Enumerate;
+use std::iter::{Enumerate, Map};
 use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 use std::slice::Iter;
 use std::str::{CharIndices, Chars, FromStr};
 
 use memchr::Memchr;
 use nom::{AsBytes, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength,
-          Offset, ParseTo, Slice};
+          Offset, ParseTo, Slice, InputTake, InputTakeAtPosition, AtEof, ExtendInto,
+          IResult, ErrorKind, Err, Context};
+use nom::types::{CompleteByteSlice, CompleteStr};
 use bytecount::{naive_num_chars, num_chars};
 
 /// A LocatedSpan is a set of meta information about the location of a token.
@@ -222,6 +224,68 @@ impl<T: InputLength> InputLength for LocatedSpan<T> {
     }
 }
 
+impl<T: AtEof> AtEof for LocatedSpan<T> {
+    fn at_eof(&self) -> bool {
+        self.fragment.at_eof()
+    }
+}
+
+impl<T> InputTake for LocatedSpan<T> where Self: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> {
+    fn take(&self, count: usize) -> Self {
+        self.slice(..count)
+    }
+
+    fn take_split(&self, count: usize) -> (Self, Self) {
+        (self.slice(count..), self.slice(..count))
+    }
+}
+
+impl<T> InputTakeAtPosition for LocatedSpan<T>
+where
+    T: InputTakeAtPosition + InputLength,
+    Self: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Clone,
+{
+    type Item = <T as InputTakeAtPosition>::Item;
+
+    fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+    where
+        P: Fn(Self::Item) -> bool
+    {
+        self.fragment.split_at_position(predicate)
+            .map(|(_i, o)| {
+                let split = o.input_len();
+                (self.slice(split..), self.slice(..split))
+            })
+            .map_err(|e| {
+                match e {
+                    Err::Error(Context::Code(_, e)) |
+                    Err::Failure(Context::Code(_, e)) => Err::Error(Context::Code(self.clone(), e)),
+                    Err::Incomplete(needed) => Err::Incomplete(needed),
+                    _ => unimplemented!("nom_locate didn't think Err::List was used in InputTakeAtPosition"),
+                }
+            })
+    }
+
+    fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+    where
+        P: Fn(Self::Item) -> bool
+    {
+        self.fragment.split_at_position1(predicate, e)
+            .map(|(_i, o)| {
+                let split = o.input_len();
+                (self.slice(split..), self.slice(..split))
+            })
+            .map_err(|e| {
+                match e {
+                    Err::Error(Context::Code(_, e)) |
+                    Err::Failure(Context::Code(_, e)) => Err::Error(Context::Code(self.clone(), e)),
+                    Err::Incomplete(needed) => Err::Incomplete(needed),
+                    _ => unimplemented!("nom_locate didn't think Err::List was used in InputTakeAtPosition"),
+                }
+            })
+    }
+}
+
 /// Implement nom::InputIter for a specific fragment type
 ///
 /// # Parameters
@@ -275,10 +339,18 @@ macro_rules! impl_input_iter {
 impl_input_iter!(&'a str, char, char, CharIndices<'a>, Chars<'a>);
 impl_input_iter!(
     &'a [u8],
-    &'a u8,
     u8,
-    Enumerate<Iter<'a, Self::RawItem>>,
-    Iter<'a, Self::RawItem>
+    u8,
+    Enumerate<Self::IterElem>,
+    Map<Iter<'a, Self::Item>, fn(&u8) -> u8>
+);
+impl_input_iter!(CompleteStr<'a>, char, char, CharIndices<'a>, Chars<'a>);
+impl_input_iter!(
+    CompleteByteSlice<'a>,
+    u8,
+    u8,
+    Enumerate<Self::IterElem>,
+    Map<Iter<'a, Self::Item>, fn(&u8) -> u8>
 );
 
 /// Implement nom::Compare for a specific fragment type.
@@ -316,8 +388,36 @@ macro_rules! impl_compare {
 }
 
 impl_compare!(&'b str, &'a str);
+impl_compare!(CompleteStr<'b>, &'a str);
 impl_compare!(&'b [u8], &'a [u8]);
+impl_compare!(CompleteByteSlice<'b>, &'a [u8]);
 impl_compare!(&'b [u8], &'a str);
+impl_compare!(CompleteByteSlice<'b>, &'a str);
+
+impl<A: Compare<B>, B> Compare<LocatedSpan<B>> for LocatedSpan<A> {
+    #[inline(always)]
+    fn compare(&self, t: LocatedSpan<B>) -> CompareResult {
+        self.fragment.compare(t.fragment)
+    }
+
+    #[inline(always)]
+    fn compare_no_case(&self, t: LocatedSpan<B>) -> CompareResult {
+        self.fragment.compare_no_case(t.fragment)
+    }
+}
+
+// TODO(future): replace impl_compare! with below default specialization?
+// default impl<A: Compare<B>, B> Compare<B> for LocatedSpan<A> {
+//     #[inline(always)]
+//     fn compare(&self, t: B) -> CompareResult {
+//         self.fragment.compare(t)
+//     }
+//
+//     #[inline(always)]
+//     fn compare_no_case(&self, t: B) -> CompareResult {
+//         self.fragment.compare_no_case(t)
+//     }
+// }
 
 /// Implement nom::Slice for a specific fragment type and range type.
 ///
@@ -415,47 +515,14 @@ macro_rules! impl_slice_ranges {
 
 impl_slice_ranges! {&'a str}
 impl_slice_ranges! {&'a [u8]}
+impl_slice_ranges! {CompleteStr<'a>}
+impl_slice_ranges! {CompleteByteSlice<'a>}
 
-/// Implement nom::FindToken for a specific token type.
-///
-/// # Parameters
-/// * `$for_type` - The token type.
-/// * `$fragment_type` - The LocatedSpan's `fragment` type which has to be searchable.
-///
-/// # Example of use
-///
-/// NB: This example is an extract from the nom_locate source code.
-///
-/// ````ignore
-/// #[macro_use]
-/// extern crate nom_locate;
-///
-/// impl_find_token! { char, &'a str}
-///
-/// impl_find_token! { u8, &'a str}
-/// impl_find_token! { &'b u8, &'a str}
-///
-/// impl_find_token! { u8, &'a [u8]}
-/// impl_find_token! { &'b u8, &'a [u8]}
-/// ````
-#[macro_export]
-macro_rules! impl_find_token {
-    ( $for_type:ty, $fragment_type:ty) => {
-        impl<'a, 'b> FindToken<LocatedSpan<$fragment_type>> for $for_type {
-            fn find_token(&self, input: LocatedSpan<$fragment_type>) -> bool {
-                self.find_token(input.fragment)
-            }
-        }
+impl<Fragment: FindToken<Token>, Token> FindToken<Token> for LocatedSpan<Fragment> {
+    fn find_token(&self, token: Token) -> bool {
+        self.fragment.find_token(token)
     }
 }
-
-impl_find_token! { char, &'a str}
-
-impl_find_token! { u8, &'a str}
-impl_find_token! { &'b u8, &'a str}
-
-impl_find_token! { u8, &'a [u8]}
-impl_find_token! { &'b u8, &'a [u8]}
 
 impl<'a, T> FindSubstring<&'a str> for LocatedSpan<T>
 where
@@ -477,10 +544,28 @@ where
     }
 }
 
-/// Implement nom::Offset for a specific fragment type.
+impl<T> Offset for LocatedSpan<T> {
+    fn offset(&self, second: &Self) -> usize {
+        let fst = self.offset;
+        let snd = second.offset;
+
+        snd - fst
+    }
+}
+
+impl<T: ToString> ToString for LocatedSpan<T> {
+    #[inline]
+    fn to_string(&self) -> String {
+        self.fragment.to_string()
+    }
+}
+
+/// Implement nom::ExtendInto for a specific fragment type.
 ///
 /// # Parameters
 /// * `$fragment_type` - The LocatedSpan's `fragment` type
+/// * `$item` - The type of the item being iterated (a reference for fragments of type `&[T]`).
+/// * `$extender` - The type of the Extended.
 ///
 /// # Example of use
 ///
@@ -490,33 +575,56 @@ where
 /// #[macro_use]
 /// extern crate nom_locate;
 ///
-/// impl_offset! {&'a str}
-/// impl_offset! {&'a [u8]}
+/// impl_extend_into!(&'a str, char, String);
+/// impl_extend_into!(CompleteStr<'a>, char, String);
+/// impl_extend_into!(&'a [u8], u8, Vec<u8>);
+/// impl_extend_into!(CompleteByteSlice<'a>, u8, Vec<u8>);
 /// ````
 #[macro_export]
-macro_rules! impl_offset {
-    ( $fragment_type:ty ) => {
-        #[cfg(not(feature = "core"))]
-        impl<'a> Offset for LocatedSpan<$fragment_type> {
-            fn offset(&self, second: &LocatedSpan<$fragment_type>) -> usize {
-                    let fst = self.fragment.as_ptr();
-                    let snd = second.fragment.as_ptr();
+macro_rules! impl_extend_into {
+    ($fragment_type:ty, $item:ty, $extender:ty) => (
+        impl<'a> ExtendInto for LocatedSpan<$fragment_type> {
+            type Item     = $item;
+            type Extender = $extender;
 
-                    snd as usize - fst as usize
+            #[inline]
+            fn new_builder(&self) -> Self::Extender {
+                self.fragment.new_builder()
+            }
+
+            #[inline]
+            fn extend_into(&self, acc: &mut Self::Extender) {
+                self.fragment.extend_into(acc)
             }
         }
-    }
+    )
 }
 
-impl_offset! {&'a str}
-impl_offset! {&'a [u8]}
+impl_extend_into!(&'a str, char, String);
+impl_extend_into!(CompleteStr<'a>, char, String);
+impl_extend_into!(&'a [u8], u8, Vec<u8>);
+impl_extend_into!(CompleteByteSlice<'a>, u8, Vec<u8>);
 
-impl<T: ToString> ToString for LocatedSpan<T> {
-    #[inline]
-    fn to_string(&self) -> String {
-        self.fragment.to_string()
-    }
+#[macro_export]
+macro_rules! impl_hex_display {
+    ($fragment_type:ty) => (
+		impl<'a> nom::HexDisplay for LocatedSpan<$fragment_type> {
+			fn to_hex(&self, chunk_size: usize) -> String {
+				self.fragment.to_hex(chunk_size)
+			}
+
+			fn to_hex_from(&self, chunk_size: usize, from: usize) -> String {
+				self.fragment.to_hex_from(chunk_size, from)
+			}
+		}
+	)
 }
+
+impl_hex_display!(&'a str);
+impl_hex_display!(CompleteStr<'a>);
+impl_hex_display!(&'a [u8]);
+impl_hex_display!(CompleteByteSlice<'a>);
+
 
 /// Capture the position of the current fragment
 
