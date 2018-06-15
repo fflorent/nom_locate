@@ -1,5 +1,7 @@
 use super::LocatedSpan;
-use nom::{Compare, CompareResult, FindSubstring, FindToken, InputIter, Offset, ParseTo, Slice};
+use nom::{Compare, CompareResult, ErrorKind, FindSubstring,
+    FindToken, InputIter, InputTake, InputTakeAtPosition,
+    Offset, ParseTo, Slice};
 
 type StrSpan<'a> = LocatedSpan<&'a str>;
 type BytesSpan<'a> = LocatedSpan<&'a [u8]>;
@@ -232,4 +234,68 @@ fn it_should_calculate_offset_for_str() {
     assert_eq!(a.offset(&b), 7);
     assert_eq!(a.offset(&c), 0);
     assert_eq!(a.offset(&d), 5);
+}
+
+#[test]
+fn it_should_take_chars() {
+    let s = StrSpan::new("abcdefghij");
+    assert_eq!(
+        s.take(5),
+        StrSpan {
+            offset: 0,
+            line: 1,
+            fragment: "abcde",
+        }
+    );
+}
+
+#[test]
+fn it_should_take_split_chars() {
+    let s = StrSpan::new("abcdefghij");
+    assert_eq!(
+        s.take_split(5),
+        (
+            StrSpan {
+                offset: 5,
+                line: 1,
+                fragment: "fghij",
+            },
+            StrSpan {
+                offset: 0,
+                line: 1,
+                fragment: "abcde",
+            }
+        )
+    );
+}
+
+#[test]
+fn it_should_split_at_position() {
+    let s = StrSpan::new("abcdefghij");
+    assert_eq!(
+        s.split_at_position(|c| { c == 'f' }),
+        Ok((
+            StrSpan {
+                offset: 5,
+                line: 1,
+                fragment: "fghij",
+            },
+            StrSpan {
+                offset: 0,
+                line: 1,
+                fragment: "abcde",
+            }
+        ))
+    );
+}
+
+// TODO also test split_at_position with an error
+
+#[test]
+fn it_should_split_at_position1() {
+    let s = StrSpan::new("abcdefghij");
+    assert_eq!(
+        s.split_at_position1(|c| { c == 'f' }, ErrorKind::Alpha),
+        s.split_at_position(|c| { c == 'f' }),
+    );
 }
