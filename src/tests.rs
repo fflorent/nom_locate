@@ -1,7 +1,25 @@
+mod lib {
+    #[cfg(feature = "std")]
+    pub mod std {
+        pub use std::vec::Vec;
+        pub use std::string::ToString;
+    }
+    #[cfg(all(not(feature = "std"), feature = "alloc"))]
+    pub mod std {
+        pub use alloc::vec::Vec;
+        pub use alloc::string::ToString;
+    }
+}
+
+#[cfg(feature="alloc")]
+use lib::std::*;
+
 use super::LocatedSpan;
 use nom::{Compare, CompareResult, ErrorKind, FindSubstring,
     FindToken, InputIter, InputTake, InputTakeAtPosition,
-    Offset, ParseTo, Slice};
+    Offset, Slice};
+#[cfg(feature="alloc")]
+use nom::ParseTo;
 
 type StrSpan<'a> = LocatedSpan<&'a str>;
 type BytesSpan<'a> = LocatedSpan<&'a [u8]>;
@@ -118,6 +136,7 @@ fn it_should_panic_when_getting_column_if_offset_is_too_big() {
     s.get_column();
 }
 
+#[cfg(feature = "alloc")]
 #[test]
 fn it_should_iterate_indices() {
     let str_slice = StrSpan::new("foobar");
@@ -133,6 +152,7 @@ fn it_should_iterate_indices() {
     );
 }
 
+#[cfg(feature = "alloc")]
 #[test]
 fn it_should_iterate_elements() {
     let str_slice = StrSpan::new("foobar");
@@ -198,6 +218,7 @@ fn it_should_find_substring() {
     assert_eq!(BytesSpan::new(b"foobar").find_substring("baz"), None);
 }
 
+#[cfg(feature = "alloc")]
 #[test]
 fn it_should_parse_to_string() {
     assert_eq!(

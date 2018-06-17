@@ -14,6 +14,9 @@ version = "0.3.0"
 repository = "fflorent/nom_locate"
 
 [features]
+default = ["std"]
+std = ["nom/std", "alloc"]
+alloc = ["nom/alloc"]
 avx-accel = ["bytecount/avx-accel"]
 simd-accel = ["bytecount/simd-accel"]
 verbose-errors = ["nom/verbose-errors"]
