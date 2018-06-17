@@ -261,8 +261,7 @@ where
                 match e {
                     Err::Error(Context::Code(_, e)) |
                     Err::Failure(Context::Code(_, e)) => Err::Error(Context::Code(self.clone(), e)),
-                    Err::Incomplete(needed) => Err::Incomplete(needed),
-                    _ => unimplemented!("nom_locate didn't think Err::List was used in InputTakeAtPosition"),
+                    Err::Incomplete(needed) => Err::Incomplete(needed)
                 }
             })
     }
@@ -280,8 +279,7 @@ where
                 match e {
                     Err::Error(Context::Code(_, e)) |
                     Err::Failure(Context::Code(_, e)) => Err::Error(Context::Code(self.clone(), e)),
-                    Err::Incomplete(needed) => Err::Incomplete(needed),
-                    _ => unimplemented!("nom_locate didn't think Err::List was used in InputTakeAtPosition"),
+                    Err::Incomplete(needed) => Err::Incomplete(needed)
                 }
             })
     }
