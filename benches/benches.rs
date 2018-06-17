@@ -54,6 +54,15 @@ fn bench_slice_from(b: &mut Bencher) {
 }
 
 #[bench]
+fn bench_slice_from_zero(b: &mut Bencher) {
+    let input = LocatedSpan::new(TEXT);
+
+    b.iter(|| {
+        input.slice(0..);
+    });
+}
+
+#[bench]
 fn bench_slice_to(b: &mut Bencher) {
     let input = LocatedSpan::new(TEXT);
 

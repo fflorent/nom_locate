@@ -428,6 +428,8 @@ impl<A: Compare<B>, B> Compare<LocatedSpan<B>> for LocatedSpan<A> {
 /// # Parameters
 /// * `$fragment_type` - The LocatedSpan's `fragment` type
 /// * `$range_type` - The range type to be use with `slice()`.
+/// * `$can_return_self` - A bool-returning lambda telling whether we
+///    can avoid creating a new `LocatedSpan`. If unsure, use `|_| false`.
 ///
 /// # Example of use
 ///
@@ -440,23 +442,23 @@ impl<A: Compare<B>, B> Compare<LocatedSpan<B>> for LocatedSpan<A> {
 /// #[macro_export]
 /// macro_rules! impl_slice_ranges {
 ///     ( $fragment_type:ty ) => {
-///         impl_slice_range! {$fragment_type, Range<usize>}
-///         impl_slice_range! {$fragment_type, RangeTo<usize>}
-///         impl_slice_range! {$fragment_type, RangeFrom<usize>}
-///         impl_slice_range! {$fragment_type, RangeFull}
+///         impl_slice_range! {$fragment_type, Range<usize>, |_| false }
+///         impl_slice_range! {$fragment_type, RangeTo<usize>, |_| false }
+///         impl_slice_range! {$fragment_type, RangeFrom<usize>, |range:RangeFrom<usize>| range.start == 0}
+///         impl_slice_range! {$fragment_type, RangeFull, |_| true}
 ///     }
 /// }
 ///
 /// ````
 #[macro_export]
 macro_rules! impl_slice_range {
-    ( $fragment_type:ty, $range_type:ty ) => {
+    ( $fragment_type:ty, $range_type:ty, $can_return_self:expr ) => {
         impl<'a> Slice<$range_type> for LocatedSpan<$fragment_type> {
             fn slice(&self, range: $range_type) -> Self {
-                let next_fragment = self.fragment.slice(range);
-                if next_fragment == self.fragment {
+                if $can_return_self(range.clone()) {
                     return *self;
                 }
+                let next_fragment = self.fragment.slice(range);
                 let consumed_len = self.fragment.offset(&next_fragment);
                 if consumed_len == 0 {
                     return LocatedSpan {
@@ -507,10 +509,10 @@ macro_rules! impl_slice_range {
 #[macro_export]
 macro_rules! impl_slice_ranges {
     ( $fragment_type:ty ) => {
-        impl_slice_range! {$fragment_type, Range<usize>}
-        impl_slice_range! {$fragment_type, RangeTo<usize>}
-        impl_slice_range! {$fragment_type, RangeFrom<usize>}
-        impl_slice_range! {$fragment_type, RangeFull}
+        impl_slice_range! {$fragment_type, Range<usize>, |_| false }
+        impl_slice_range! {$fragment_type, RangeTo<usize>, |_| false }
+        impl_slice_range! {$fragment_type, RangeFrom<usize>, |range:RangeFrom<usize>| range.start == 0}
+        impl_slice_range! {$fragment_type, RangeFull, |_| true}
     }
 }
 
