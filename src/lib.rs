@@ -28,6 +28,7 @@
 //!     pub bar: String,
 //! }
 //!
+//! # #[cfg(feature = "alloc")]
 //! named!(parse_foobar( Span ) -> Token, do_parse!(
 //!     take_until!("foo") >>
 //!     position: position!() >>
@@ -40,6 +41,7 @@
 //!     })
 //! ));
 //!
+//! # #[cfg(feature = "alloc")]
 //! fn main () {
 //!     let input = Span::new(CompleteStr("Lorem ipsum \n foobar"));
 //!     let output = parse_foobar(input);
@@ -51,7 +53,18 @@
 //!     });
 //!     assert_eq!(position.get_column(), 2);
 //! }
+//! # #[cfg(not(feature = "alloc"))]
+//! fn main() {}
 //! ````
+
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
+
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
+#[cfg_attr(test, macro_use)]
+extern crate alloc;
+
+
 extern crate bytecount;
 extern crate memchr;
 extern crate nom;
@@ -59,15 +72,40 @@ extern crate nom;
 #[cfg(test)]
 mod tests;
 
-use std::iter::{Enumerate, Map};
-use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
-use std::slice::Iter;
-use std::str::{CharIndices, Chars, FromStr};
+mod lib {
+    #[cfg(feature = "std")]
+    pub mod std {
+        pub use std::iter::{Enumerate, Map};
+        pub use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+        pub use std::slice::Iter;
+        pub use std::str::{CharIndices, Chars, FromStr};
+        pub use std::slice;
+        pub use std::string::{String, ToString};
+        pub use std::vec::Vec;
+    }
+
+    #[cfg(not(feature = "std"))]
+    pub mod std {
+        pub use core::iter::{Enumerate, Map};
+        pub use core::ops::{Range, RangeFrom, RangeFull, RangeTo};
+        pub use core::slice::Iter;
+        pub use core::str::{CharIndices, Chars, FromStr};
+        pub use core::slice;
+        #[cfg(feature = "alloc")]
+        pub use alloc::string::{String, ToString};
+        #[cfg(feature = "alloc")]
+        pub use alloc::vec::Vec;
+    }
+}
+
+use lib::std::*;
 
 use memchr::Memchr;
 use nom::{AsBytes, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputLength,
-          Offset, ParseTo, Slice, InputTake, InputTakeAtPosition, AtEof, ExtendInto,
+          Offset, ParseTo, Slice, InputTake, InputTakeAtPosition, AtEof,
           IResult, ErrorKind, Err, Context};
+#[cfg(feature="alloc")]
+use nom::ExtendInto;
 use nom::types::{CompleteByteSlice, CompleteStr};
 use bytecount::{naive_num_chars, num_chars};
 
@@ -129,7 +167,7 @@ impl<T: AsBytes> LocatedSpan<T> {
                 "offset is too big"
             );
             let orig_input_ptr = self_ptr.offset(-(self.offset as isize));
-            std::slice::from_raw_parts(orig_input_ptr, self.offset)
+            slice::from_raw_parts(orig_input_ptr, self.offset)
         };
 
         let column = match memchr::memrchr(b'\n', before_self) {
@@ -554,6 +592,7 @@ impl<T> Offset for LocatedSpan<T> {
     }
 }
 
+#[cfg(feature="alloc")]
 impl<T: ToString> ToString for LocatedSpan<T> {
     #[inline]
     fn to_string(&self) -> String {
@@ -601,14 +640,19 @@ macro_rules! impl_extend_into {
     )
 }
 
+#[cfg(feature="alloc")]
 impl_extend_into!(&'a str, char, String);
+#[cfg(feature="alloc")]
 impl_extend_into!(CompleteStr<'a>, char, String);
+#[cfg(feature="alloc")]
 impl_extend_into!(&'a [u8], u8, Vec<u8>);
+#[cfg(feature="alloc")]
 impl_extend_into!(CompleteByteSlice<'a>, u8, Vec<u8>);
 
 #[macro_export]
 macro_rules! impl_hex_display {
     ($fragment_type:ty) => (
+        #[cfg(feature="alloc")]
 		impl<'a> nom::HexDisplay for LocatedSpan<$fragment_type> {
 			fn to_hex(&self, chunk_size: usize) -> String {
 				self.fragment.to_hex(chunk_size)

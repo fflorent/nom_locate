@@ -110,6 +110,7 @@ fn find_substring<'a>(input: StrSpan<'a>, substr: &str) -> IResult<StrSpan<'a>, 
     }
 }
 
+#[cfg(feature = "alloc")]
 #[test]
 fn test_escaped_string() {
     use nom::Needed; // https://github.com/Geal/nom/issues/780

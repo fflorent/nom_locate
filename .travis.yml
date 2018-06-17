@@ -11,23 +11,16 @@ addons:
       - libdw-dev
       - binutils-dev
 
-rust:
-  - stable
-  - beta
-  - nightly
-
 # load travis-cargo
 before_script:
   - |
       pip install 'travis-cargo<0.2' --user &&
       export PATH=$HOME/.local/bin:$PATH
-  - cargo install cargo-travis --force && export PATH=$HOME/.cargo/bin:$PATH;
 
 script:
   - |
-      travis-cargo build &&
-      travis-cargo test &&
-      travis-cargo bench &&
+      cargo build --no-default-features --features="$FEATURES" &&
+      cargo test --no-default-features --features="$FEATURES" &&
       travis-cargo --only stable doc
 
 # Inspired from geal/nom
@@ -45,3 +38,22 @@ after_success:
 env:
   global:
     - TRAVIS_CARGO_NIGHTLY_FEATURE=""
+
+matrix:
+  include:
+    - rust: stable
+      env: FEATURES='default'
+    - rust: stable
+      env: FEATURES=''
+
+    - rust: beta
+      env: FEATURES='default'
+    - rust: beta
+      env: FEATURES=''
+
+    - rust: nightly
+      env: FEATURES='default'
+    - rust: nightly
+      env: FEATURES='alloc'
+    - rust: nightly
+      env: FEATURES=''
