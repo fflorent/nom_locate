@@ -299,6 +299,13 @@ where
                 match e {
                     Err::Error(Context::Code(_, e)) |
                     Err::Failure(Context::Code(_, e)) => Err::Error(Context::Code(self.clone(), e)),
+                    #[cfg(feature="verbose-errors")]
+                    Err::Error(Context::List(mut v)) |
+                    Err::Failure(Context::List(mut v)) => {
+                        assert_eq!(v.len(), 1); // split_at_position cannot return a chain of errors of length != 1.
+                        let (_, e) = v.remove(0);
+                        Err::Error(Context::List(vec![(self.clone(), e)]))
+                    },
                     Err::Incomplete(needed) => Err::Incomplete(needed)
                 }
             })
@@ -317,6 +324,13 @@ where
                 match e {
                     Err::Error(Context::Code(_, e)) |
                     Err::Failure(Context::Code(_, e)) => Err::Error(Context::Code(self.clone(), e)),
+                    #[cfg(feature="verbose-errors")]
+                    Err::Error(Context::List(mut v)) |
+                    Err::Failure(Context::List(mut v)) => {
+                        assert_eq!(v.len(), 1); // split_at_position cannot return a chain of errors of length != 1.
+                        let (_, e) = v.remove(0);
+                        Err::Error(Context::List(vec![(self.clone(), e)]))
+                    },
                     Err::Incomplete(needed) => Err::Incomplete(needed)
                 }
             })
