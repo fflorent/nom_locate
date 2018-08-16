@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v0.3.1
+
+Patch version:
+ - [Support no_std](https://github.com/fflorent/nom_locate/pull/16)
+ - [Fix compilation with verbose-errors](https://github.com/fflorent/nom_locate/issues/17)
+
 ## v0.3
 
  - [Support for Nom v4](https://github.com/fflorent/nom_locate/pull/10)
