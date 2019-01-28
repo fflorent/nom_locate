@@ -1,28 +1,31 @@
 mod lib {
     #[cfg(feature = "std")]
     pub mod std {
-        pub use std::vec::Vec;
         pub use std::string::ToString;
+        pub use std::vec::Vec;
     }
     #[cfg(all(not(feature = "std"), feature = "alloc"))]
     pub mod std {
-        pub use alloc::vec::Vec;
         pub use alloc::string::ToString;
+        pub use alloc::vec::Vec;
     }
 }
 
-#[cfg(feature="alloc")]
+#[cfg(feature = "alloc")]
 use lib::std::*;
 
 use super::LocatedSpan;
-use nom::{Compare, CompareResult, ErrorKind, FindSubstring,
-    FindToken, InputIter, InputTake, InputTakeAtPosition,
-    Offset, Slice};
-#[cfg(feature="alloc")]
+use super::LocatedSpanEx;
+#[cfg(feature = "alloc")]
 use nom::ParseTo;
+use nom::{
+    Compare, CompareResult, ErrorKind, FindSubstring, FindToken, InputIter, InputTake,
+    InputTakeAtPosition, Offset, Slice,
+};
 
 type StrSpan<'a> = LocatedSpan<&'a str>;
 type BytesSpan<'a> = LocatedSpan<&'a [u8]>;
+type StrSpanEx<'a> = LocatedSpanEx<'static, &'a str, &'static str>;
 
 #[test]
 fn it_should_call_new_for_u8_successfully() {
@@ -31,6 +34,7 @@ fn it_should_call_new_for_u8_successfully() {
         offset: 0,
         line: 1,
         fragment: input,
+        info: &(),
     };
 
     assert_eq!(BytesSpan::new(input), output);
@@ -43,6 +47,7 @@ fn it_should_call_new_for_str_successfully() {
         offset: 0,
         line: 1,
         fragment: input,
+        info: &(),
     };
 
     assert_eq!(StrSpan::new(input), output);
@@ -57,6 +62,7 @@ fn it_should_slice_for_str() {
             offset: 1,
             line: 1,
             fragment: "oobar",
+            info: &(),
         }
     );
     assert_eq!(
@@ -65,6 +71,7 @@ fn it_should_slice_for_str() {
             offset: 1,
             line: 1,
             fragment: "oo",
+            info: &(),
         }
     );
     assert_eq!(
@@ -73,6 +80,7 @@ fn it_should_slice_for_str() {
             offset: 0,
             line: 1,
             fragment: "foo",
+            info: &(),
         }
     );
     assert_eq!(str_slice.slice(..), str_slice);
@@ -87,6 +95,7 @@ fn it_should_slice_for_u8() {
             offset: 1,
             line: 1,
             fragment: b"oobar",
+            info: &(),
         }
     );
     assert_eq!(
@@ -95,6 +104,7 @@ fn it_should_slice_for_u8() {
             offset: 1,
             line: 1,
             fragment: b"oo",
+            info: &(),
         }
     );
     assert_eq!(
@@ -103,9 +113,43 @@ fn it_should_slice_for_u8() {
             offset: 0,
             line: 1,
             fragment: b"foo",
+            info: &(),
         }
     );
     assert_eq!(bytes_slice.slice(..), bytes_slice);
+}
+
+#[test]
+fn it_should_preserve_info_when_slicing() {
+    let str_slice = StrSpanEx::new_info("foobar", &"info");
+    assert_eq!(
+        str_slice.slice(1..),
+        StrSpanEx {
+            offset: 1,
+            line: 1,
+            fragment: "oobar",
+            info: &"info",
+        }
+    );
+    assert_eq!(
+        str_slice.slice(1..3),
+        StrSpanEx {
+            offset: 1,
+            line: 1,
+            fragment: "oo",
+            info: &"info",
+        }
+    );
+    assert_eq!(
+        str_slice.slice(..3),
+        StrSpanEx {
+            offset: 0,
+            line: 1,
+            fragment: "foo",
+            info: &"info",
+        }
+    );
+    assert_eq!(str_slice.slice(..), str_slice);
 }
 
 #[test]
@@ -132,6 +176,7 @@ fn it_should_panic_when_getting_column_if_offset_is_too_big() {
         offset: usize::max_value(),
         fragment: "",
         line: 1,
+        info: &(),
     };
     s.get_column();
 }
@@ -266,6 +311,7 @@ fn it_should_take_chars() {
             offset: 0,
             line: 1,
             fragment: "abcde",
+            info: &(),
         }
     );
 }
@@ -280,11 +326,13 @@ fn it_should_take_split_chars() {
                 offset: 5,
                 line: 1,
                 fragment: "fghij",
+                info: &(),
             },
             StrSpan {
                 offset: 0,
                 line: 1,
                 fragment: "abcde",
+                info: &(),
             }
         )
     );
@@ -294,17 +342,19 @@ fn it_should_take_split_chars() {
 fn it_should_split_at_position() {
     let s = StrSpan::new("abcdefghij");
     assert_eq!(
-        s.split_at_position(|c| { c == 'f' }),
+        s.split_at_position(|c| c == 'f'),
         Ok((
             StrSpan {
                 offset: 5,
                 line: 1,
                 fragment: "fghij",
+                info: &(),
             },
             StrSpan {
                 offset: 0,
                 line: 1,
                 fragment: "abcde",
+                info: &(),
             }
         ))
     );
@@ -316,7 +366,7 @@ fn it_should_split_at_position() {
 fn it_should_split_at_position1() {
     let s = StrSpan::new("abcdefghij");
     assert_eq!(
-        s.split_at_position1(|c| { c == 'f' }, ErrorKind::Alpha),
-        s.split_at_position(|c| { c == 'f' }),
+        s.split_at_position1(|c| c == 'f', ErrorKind::Alpha),
+        s.split_at_position(|c| c == 'f'),
     );
 }
