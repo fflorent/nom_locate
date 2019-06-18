@@ -1,25 +1,26 @@
 mod lib {
     #[cfg(feature = "std")]
     pub mod std {
-        pub use std::vec::Vec;
         pub use std::string::ToString;
+        pub use std::vec::Vec;
     }
     #[cfg(all(not(feature = "std"), feature = "alloc"))]
     pub mod std {
-        pub use alloc::vec::Vec;
         pub use alloc::string::ToString;
+        pub use alloc::vec::Vec;
     }
 }
 
-#[cfg(feature="alloc")]
+#[cfg(feature = "alloc")]
 use lib::std::*;
 
 use super::LocatedSpan;
-use nom::{Compare, CompareResult, ErrorKind, FindSubstring,
-    FindToken, InputIter, InputTake, InputTakeAtPosition,
-    Offset, Slice};
-#[cfg(feature="alloc")]
+#[cfg(feature = "alloc")]
 use nom::ParseTo;
+use nom::{
+    error::ErrorKind, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputTake,
+    InputTakeAtPosition, Offset, Slice,
+};
 
 type StrSpan<'a> = LocatedSpan<&'a str>;
 type BytesSpan<'a> = LocatedSpan<&'a [u8]>;
@@ -290,11 +291,13 @@ fn it_should_take_split_chars() {
     );
 }
 
+type TestError<'a> = (LocatedSpan<&'a str>, nom::error::ErrorKind);
+
 #[test]
 fn it_should_split_at_position() {
     let s = StrSpan::new("abcdefghij");
     assert_eq!(
-        s.split_at_position(|c| { c == 'f' }),
+        s.split_at_position::<_, TestError>(|c| { c == 'f' }),
         Ok((
             StrSpan {
                 offset: 5,
@@ -316,7 +319,7 @@ fn it_should_split_at_position() {
 fn it_should_split_at_position1() {
     let s = StrSpan::new("abcdefghij");
     assert_eq!(
-        s.split_at_position1(|c| { c == 'f' }, ErrorKind::Alpha),
-        s.split_at_position(|c| { c == 'f' }),
+        s.split_at_position1::<_, TestError>(|c| { c == 'f' }, ErrorKind::Alpha),
+        s.split_at_position::<_, TestError>(|c| { c == 'f' }),
     );
 }
