@@ -278,7 +278,7 @@ where
 
 impl<T> InputTakeAtPosition for LocatedSpan<T>
 where
-    T: InputTakeAtPosition + InputLength + InputIter,
+    T: InputTakeAtPosition + InputLength + InputIter + std::fmt::Debug,
     Self: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Clone,
 {
     type Item = <T as InputIter>::Item;
@@ -314,11 +314,20 @@ where
     where
         P: Fn(Self::Item) -> bool,
     {
-        match self.fragment.position(predicate) {
+        let result = match self.fragment.position(predicate) {
             Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
             Some(n) => Ok(self.take_split(n)),
             None => Err(Err::Incomplete(nom::Needed::Size(1))),
+        };
+
+        match &result {
+            Ok(v) => {}
+            Err(Err::Incomplete(_)) => println!("incomplete"),
+            Err(Err::Error(_)) => println!("error"),
+            Err(Err::Failure(_)) => println!("failure"),
         }
+
+        result
     }
 
     fn split_at_position1_complete<P, E: ParseError<Self>>(
@@ -329,9 +338,28 @@ where
     where
         P: Fn(Self::Item) -> bool,
     {
-        match self.split_at_position1(predicate, e) {
-            Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
-            res => res,
+        // match self.fragment.find(predicate) {
+        //     Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+        //     Some(i) => Ok((&self[i..], &self[..i])),
+        //     None => {
+        //         if self.fragment.len() == 0 {
+        //             Err(Err::Error(E::from_error_kind(self, e)))
+        //         } else {
+        //             Ok(self.take_split(self.input_len()))
+        //         }
+        //     }
+        // }
+
+        match self.fragment.position(predicate) {
+            Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
+            Some(n) => Ok(self.take_split(n)),
+            None => {
+                if self.fragment.input_len() == 0 {
+                    Err(Err::Error(E::from_error_kind(self.clone(), e)))
+                } else {
+                    Ok(self.take_split(self.input_len()))
+                }
+            }
         }
     }
 }
