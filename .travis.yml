@@ -44,8 +44,6 @@ matrix:
     - rust: stable
       env: FEATURES='default'
     - rust: stable
-      env: FEATURES='default verbose-errors'
-    - rust: stable
       env: FEATURES=''
 
     - rust: beta
@@ -55,8 +53,6 @@ matrix:
 
     - rust: nightly
       env: FEATURES='default'
-    - rust: nightly
-      env: FEATURES='default verbose-errors'
     - rust: nightly
       env: FEATURES='alloc'
     - rust: nightly
