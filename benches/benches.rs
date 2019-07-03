@@ -5,8 +5,8 @@ extern crate nom_locate;
 
 extern crate nom;
 
-use nom_locate::LocatedSpan;
 use nom::Slice;
+use nom_locate::LocatedSpan;
 
 use test::Bencher;
 
