@@ -19,9 +19,8 @@ std = ["nom/std", "alloc"]
 alloc = ["nom/alloc"]
 avx-accel = ["bytecount/avx-accel"]
 simd-accel = ["bytecount/simd-accel"]
-verbose-errors = ["nom/verbose-errors"]
 
 [dependencies]
 bytecount = "^0.3"
 memchr = ">=1.0.1, <3.0.0" # ^1.0.0 + ^2.0
-nom = "4.0.0"
+nom = "5.0.0"

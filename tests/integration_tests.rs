@@ -2,20 +2,19 @@
 extern crate nom;
 extern crate nom_locate;
 
-use nom::types::{CompleteByteSlice, CompleteStr};
-use nom::{AsBytes, ErrorKind, FindSubstring, IResult, InputLength, Slice};
+use nom::{error::ErrorKind, AsBytes, FindSubstring, IResult, InputLength, Slice};
 use nom_locate::LocatedSpan;
 use std::cmp;
 use std::fmt::Debug;
 use std::ops::{Range, RangeFull};
 
-type StrSpan<'a> = LocatedSpan<CompleteStr<'a>>;
-type BytesSpan<'a> = LocatedSpan<CompleteByteSlice<'a>>;
+type StrSpan<'a> = LocatedSpan<&'a str>;
+type BytesSpan<'a> = LocatedSpan<&'a [u8]>;
 
 named!(simple_parser_str< StrSpan, Vec<StrSpan> >, do_parse!(
     foo: ws!(tag!("foo")) >>
     bar: ws!(tag!("bar")) >>
-    baz: many0!(ws!(tag!("baz"))) >>
+    baz: many0!(complete!(ws!(tag!("baz")))) >>
     eof: eof!() >>
     ({
         let mut res = vec![foo, bar];
@@ -28,7 +27,7 @@ named!(simple_parser_str< StrSpan, Vec<StrSpan> >, do_parse!(
 named!(simple_parser_u8< BytesSpan, Vec<BytesSpan> >, do_parse!(
     foo: ws!(tag!("foo")) >>
     bar: ws!(tag!("bar")) >>
-    baz: many0!(ws!(tag!("baz"))) >>
+    baz: many0!(complete!(ws!(tag!("baz")))) >>
     eof: eof!() >>
     ({
         let mut res = vec![foo, bar];
@@ -50,9 +49,18 @@ where
     F: Fn(LocatedSpan<T>) -> IResult<LocatedSpan<T>, Vec<LocatedSpan<T>>>,
     T: InputLength + Slice<Range<usize>> + Slice<RangeFull> + Debug + PartialEq + AsBytes,
 {
-    let res = parser(LocatedSpan::new(input.slice(..)));
-    assert!(res.is_ok(), "the parser should run successfully");
-    let (remaining, output) = res.unwrap();
+    let res = parser(LocatedSpan::new(input.slice(..)))
+        .map_err(|err| {
+            eprintln!(
+                "for={:?} -- The parser should run successfully\n{:?}",
+                input, err
+            );
+
+            format!("The parser should run successfully")
+        })
+        .unwrap();
+    // assert!(res.is_ok(), "the parser should run successfully");
+    let (remaining, output) = res;
     assert!(
         remaining.fragment.input_len() == 0,
         "no input should remain"
@@ -78,7 +86,7 @@ where
 fn it_locates_str_fragments() {
     test_str_fragments(
         simple_parser_str,
-        CompleteStr("foobarbaz"),
+        "foobarbaz",
         vec![
             Position {
                 line: 1,
@@ -108,11 +116,9 @@ fn it_locates_str_fragments() {
     );
     test_str_fragments(
         simple_parser_str,
-        CompleteStr(
-            " foo
+        " foo
         bar
             baz",
-        ),
         vec![
             Position {
                 line: 1,
@@ -146,7 +152,7 @@ fn it_locates_str_fragments() {
 fn it_locates_u8_fragments() {
     test_str_fragments(
         simple_parser_u8,
-        CompleteByteSlice(b"foobarbaz"),
+        b"foobarbaz",
         vec![
             Position {
                 line: 1,
@@ -176,11 +182,9 @@ fn it_locates_u8_fragments() {
     );
     test_str_fragments(
         simple_parser_u8,
-        CompleteByteSlice(
-            b" foo
+        b" foo
         bar
             baz",
-        ),
         vec![
             Position {
                 line: 1,
@@ -210,13 +214,13 @@ fn it_locates_u8_fragments() {
     );
 }
 
-fn find_substring<'a>(input: StrSpan<'a>, substr: &str) -> IResult<StrSpan<'a>, StrSpan<'a>> {
+fn find_substring<'a>(
+    input: StrSpan<'a>,
+    substr: &'static str,
+) -> IResult<StrSpan<'a>, StrSpan<'a>> {
     let substr_len = substr.len();
     match input.find_substring(substr) {
-        None => Err(nom::Err::Error(error_position!(
-            input,
-            ErrorKind::Custom(1)
-        ))),
+        None => Err(nom::Err::Error(error_position!(input, ErrorKind::Tag))),
         Some(pos) => Ok((
             input.slice(pos + substr_len..),
             input.slice(pos..pos + substr_len),
@@ -227,20 +231,21 @@ fn find_substring<'a>(input: StrSpan<'a>, substr: &str) -> IResult<StrSpan<'a>, 
 #[cfg(feature = "alloc")]
 #[test]
 fn test_escaped_string() {
+    #[allow(unused)]
     use nom::Needed; // https://github.com/Geal/nom/issues/780
     named!(string<StrSpan, String>, delimited!(
         char!('"'),
-        escaped_transform!(call!(nom::alpha), '\\', nom::anychar),
+        escaped_transform!(call!(nom::character::complete::alpha1), '\\', nom::character::complete::anychar),
         char!('"')
     ));
 
     assert_eq!(
-        string(LocatedSpan::new(CompleteStr("\"foo\\\"bar\""))),
+        string(LocatedSpan::new("\"foo\\\"bar\"")),
         Ok((
             LocatedSpan {
                 offset: 10,
                 line: 1,
-                fragment: CompleteStr("")
+                fragment: ""
             },
             "foo\"bar".to_string()
         ))
@@ -248,10 +253,10 @@ fn test_escaped_string() {
 }
 
 named!(plague<StrSpan, Vec<StrSpan> >, do_parse!(
-    bacille: apply!(find_substring, "le bacille") >>
-    bacille_pronouns: many0!(apply!(find_substring, "il ")) >>
-    peste: apply!(find_substring, "la peste") >>
-    take_until_and_consume1!(".") >>
+    bacille: call!(find_substring, "le bacille") >>
+    bacille_pronouns: many0!(call!(find_substring, "il ")) >>
+    peste: call!(find_substring, "la peste") >>
+    take_until!(".") >> tag!(".") >>
     ({
         let mut res = vec![bacille];
         res.extend(bacille_pronouns);
@@ -263,8 +268,7 @@ named!(plague<StrSpan, Vec<StrSpan> >, do_parse!(
 #[test]
 fn it_locates_complex_fragments() {
     // Lorem ipsum is boring. Let's quote Camus' Plague.
-    let input = CompleteStr(
-        "Écoutant, en effet, les cris d’allégresse qui montaient de la ville,
+    let input = "Écoutant, en effet, les cris d’allégresse qui montaient de la ville,
 Rieux se souvenait que cette allégresse était toujours menacée.
 Car il savait ce que cette foule en joie ignorait,
 et qu’on peut lire dans les livres,
@@ -274,8 +278,7 @@ les meubles et le linge, qu’il attend patiemment dans les chambres, les caves,
 les malles, les mouchoirs et les paperasses,
 et que, peut-être, le jour viendrait où,
 pour le malheur et l’enseignement des hommes,
-la peste réveillerait ses rats et les enverrait mourir dans une cité heureuse.",
-    );
+la peste réveillerait ses rats et les enverrait mourir dans une cité heureuse.";
 
     let expected = vec![
         Position {
