@@ -1,25 +1,26 @@
 mod lib {
     #[cfg(feature = "std")]
     pub mod std {
-        pub use std::vec::Vec;
         pub use std::string::ToString;
+        pub use std::vec::Vec;
     }
     #[cfg(all(not(feature = "std"), feature = "alloc"))]
     pub mod std {
-        pub use alloc::vec::Vec;
         pub use alloc::string::ToString;
+        pub use alloc::vec::Vec;
     }
 }
 
-#[cfg(feature="alloc")]
+#[cfg(feature = "alloc")]
 use lib::std::*;
 
 use super::LocatedSpan;
-use nom::{Compare, CompareResult, ErrorKind, FindSubstring,
-    FindToken, InputIter, InputTake, InputTakeAtPosition,
-    Offset, Slice};
-#[cfg(feature="alloc")]
+#[cfg(feature = "alloc")]
 use nom::ParseTo;
+use nom::{
+    Compare, CompareResult, ErrorKind, FindSubstring, FindToken, InputIter, InputTake,
+    InputTakeAtPosition, Offset, Slice,
+};
 
 type StrSpan<'a> = LocatedSpan<&'a str>;
 type BytesSpan<'a> = LocatedSpan<&'a [u8]>;
