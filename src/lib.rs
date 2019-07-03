@@ -18,9 +18,8 @@
 //! #[macro_use]
 //! extern crate nom_locate;
 //!
-//! use nom::types::CompleteStr;
 //! use nom_locate::LocatedSpan;
-//! type Span<'a> = LocatedSpan<CompleteStr<'a>>;
+//! type Span<'a> = LocatedSpan<&'a str>;
 //!
 //! struct Token<'a> {
 //!     pub position: Span<'a>,
@@ -43,13 +42,13 @@
 //!
 //! # #[cfg(feature = "alloc")]
 //! fn main () {
-//!     let input = Span::new(CompleteStr("Lorem ipsum \n foobar"));
+//!     let input = Span::new("Lorem ipsum \n foobar");
 //!     let output = parse_foobar(input);
 //!     let position = output.unwrap().1.position;
 //!     assert_eq!(position, Span {
 //!         offset: 14,
 //!         line: 2,
-//!         fragment: CompleteStr("")
+//!         fragment: ""
 //!     });
 //!     assert_eq!(position.get_column(), 2);
 //! }
@@ -101,12 +100,12 @@ use lib::std::*;
 
 use bytecount::{naive_num_chars, num_chars};
 use memchr::Memchr;
-use nom::types::{CompleteByteSlice, CompleteStr};
 #[cfg(feature = "alloc")]
 use nom::ExtendInto;
 use nom::{
-    AsBytes, AtEof, Compare, CompareResult, Context, Err, ErrorKind, FindSubstring, FindToken,
-    IResult, InputIter, InputLength, InputTake, InputTakeAtPosition, Offset, ParseTo, Slice,
+    error::{ErrorKind, ParseError},
+    AsBytes, Compare, CompareResult, Err, FindSubstring, FindToken, IResult, InputIter,
+    InputLength, InputTake, InputTakeAtPosition, Offset, ParseTo, Slice,
 };
 
 /// A LocatedSpan is a set of meta information about the location of a token.
@@ -263,12 +262,6 @@ impl<T: InputLength> InputLength for LocatedSpan<T> {
     }
 }
 
-impl<T: AtEof> AtEof for LocatedSpan<T> {
-    fn at_eof(&self) -> bool {
-        self.fragment.at_eof()
-    }
-}
-
 impl<T> InputTake for LocatedSpan<T>
 where
     Self: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
@@ -284,61 +277,77 @@ where
 
 impl<T> InputTakeAtPosition for LocatedSpan<T>
 where
-    T: InputTakeAtPosition + InputLength,
+    T: InputTakeAtPosition + InputLength + InputIter + std::fmt::Debug,
     Self: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Clone,
 {
-    type Item = <T as InputTakeAtPosition>::Item;
+    type Item = <T as InputIter>::Item;
 
-    fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+    fn split_at_position_complete<P, E: ParseError<Self>>(
+        &self,
+        predicate: P,
+    ) -> IResult<Self, Self, E>
     where
         P: Fn(Self::Item) -> bool,
     {
-        self.fragment
-            .split_at_position(predicate)
-            .map(|(_i, o)| {
-                let split = o.input_len();
-                (self.slice(split..), self.slice(..split))
-            })
-            .map_err(|e| {
-                match e {
-                    Err::Error(Context::Code(_, e)) | Err::Failure(Context::Code(_, e)) => {
-                        Err::Error(Context::Code(self.clone(), e))
-                    }
-                    #[cfg(feature = "verbose-errors")]
-                    Err::Error(Context::List(mut v)) | Err::Failure(Context::List(mut v)) => {
-                        assert_eq!(v.len(), 1); // split_at_position cannot return a chain of errors of length != 1.
-                        let (_, e) = v.remove(0);
-                        Err::Error(Context::List(vec![(self.clone(), e)]))
-                    }
-                    Err::Incomplete(needed) => Err::Incomplete(needed),
-                }
-            })
+        match self.split_at_position(predicate) {
+            Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
+            res => res,
+        }
     }
 
-    fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+    fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
     where
         P: Fn(Self::Item) -> bool,
     {
-        self.fragment
-            .split_at_position1(predicate, e)
-            .map(|(_i, o)| {
-                let split = o.input_len();
-                (self.slice(split..), self.slice(..split))
-            })
-            .map_err(|e| {
-                match e {
-                    Err::Error(Context::Code(_, e)) | Err::Failure(Context::Code(_, e)) => {
-                        Err::Error(Context::Code(self.clone(), e))
-                    }
-                    #[cfg(feature = "verbose-errors")]
-                    Err::Error(Context::List(mut v)) | Err::Failure(Context::List(mut v)) => {
-                        assert_eq!(v.len(), 1); // split_at_position cannot return a chain of errors of length != 1.
-                        let (_, e) = v.remove(0);
-                        Err::Error(Context::List(vec![(self.clone(), e)]))
-                    }
-                    Err::Incomplete(needed) => Err::Incomplete(needed),
+        match self.fragment.position(predicate) {
+            Some(n) => Ok(self.take_split(n)),
+            None => Err(Err::Incomplete(nom::Needed::Size(1))),
+        }
+    }
+
+    fn split_at_position1<P, E: ParseError<Self>>(
+        &self,
+        predicate: P,
+        e: ErrorKind,
+    ) -> IResult<Self, Self, E>
+    where
+        P: Fn(Self::Item) -> bool,
+    {
+        let result = match self.fragment.position(predicate) {
+            Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
+            Some(n) => Ok(self.take_split(n)),
+            None => Err(Err::Incomplete(nom::Needed::Size(1))),
+        };
+
+        match &result {
+            Ok(_) => {}
+            Err(Err::Incomplete(_)) => println!("incomplete"),
+            Err(Err::Error(_)) => println!("error"),
+            Err(Err::Failure(_)) => println!("failure"),
+        }
+
+        result
+    }
+
+    fn split_at_position1_complete<P, E: ParseError<Self>>(
+        &self,
+        predicate: P,
+        e: ErrorKind,
+    ) -> IResult<Self, Self, E>
+    where
+        P: Fn(Self::Item) -> bool,
+    {
+        match self.fragment.position(predicate) {
+            Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
+            Some(n) => Ok(self.take_split(n)),
+            None => {
+                if self.fragment.input_len() == 0 {
+                    Err(Err::Error(E::from_error_kind(self.clone(), e)))
+                } else {
+                    Ok(self.take_split(self.input_len()))
                 }
-            })
+            }
+        }
     }
 }
 
@@ -369,7 +378,6 @@ macro_rules! impl_input_iter {
     ($fragment_type:ty, $item:ty, $raw_item:ty, $iter:ty, $iter_elem:ty) => {
         impl<'a> InputIter for LocatedSpan<$fragment_type> {
             type Item = $item;
-            type RawItem = $raw_item;
             type Iter = $iter;
             type IterElem = $iter_elem;
             #[inline]
@@ -383,7 +391,7 @@ macro_rules! impl_input_iter {
             #[inline]
             fn position<P>(&self, predicate: P) -> Option<usize>
             where
-                P: Fn(Self::RawItem) -> bool,
+                P: Fn(Self::Item) -> bool,
             {
                 self.fragment.position(predicate)
             }
@@ -398,14 +406,6 @@ macro_rules! impl_input_iter {
 impl_input_iter!(&'a str, char, char, CharIndices<'a>, Chars<'a>);
 impl_input_iter!(
     &'a [u8],
-    u8,
-    u8,
-    Enumerate<Self::IterElem>,
-    Map<Iter<'a, Self::Item>, fn(&u8) -> u8>
-);
-impl_input_iter!(CompleteStr<'a>, char, char, CharIndices<'a>, Chars<'a>);
-impl_input_iter!(
-    CompleteByteSlice<'a>,
     u8,
     u8,
     Enumerate<Self::IterElem>,
@@ -447,11 +447,8 @@ macro_rules! impl_compare {
 }
 
 impl_compare!(&'b str, &'a str);
-impl_compare!(CompleteStr<'b>, &'a str);
 impl_compare!(&'b [u8], &'a [u8]);
-impl_compare!(CompleteByteSlice<'b>, &'a [u8]);
 impl_compare!(&'b [u8], &'a str);
-impl_compare!(CompleteByteSlice<'b>, &'a str);
 
 impl<A: Compare<B>, B> Compare<LocatedSpan<B>> for LocatedSpan<A> {
     #[inline(always)]
@@ -576,8 +573,6 @@ macro_rules! impl_slice_ranges {
 
 impl_slice_ranges! {&'a str}
 impl_slice_ranges! {&'a [u8]}
-impl_slice_ranges! {CompleteStr<'a>}
-impl_slice_ranges! {CompleteByteSlice<'a>}
 
 impl<Fragment: FindToken<Token>, Token> FindToken<Token> for LocatedSpan<Fragment> {
     fn find_token(&self, token: Token) -> bool {
@@ -638,9 +633,7 @@ impl<T: ToString> ToString for LocatedSpan<T> {
 /// extern crate nom_locate;
 ///
 /// impl_extend_into!(&'a str, char, String);
-/// impl_extend_into!(CompleteStr<'a>, char, String);
 /// impl_extend_into!(&'a [u8], u8, Vec<u8>);
-/// impl_extend_into!(CompleteByteSlice<'a>, u8, Vec<u8>);
 /// ````
 #[macro_export]
 macro_rules! impl_extend_into {
@@ -665,11 +658,7 @@ macro_rules! impl_extend_into {
 #[cfg(feature = "alloc")]
 impl_extend_into!(&'a str, char, String);
 #[cfg(feature = "alloc")]
-impl_extend_into!(CompleteStr<'a>, char, String);
-#[cfg(feature = "alloc")]
 impl_extend_into!(&'a [u8], u8, Vec<u8>);
-#[cfg(feature = "alloc")]
-impl_extend_into!(CompleteByteSlice<'a>, u8, Vec<u8>);
 
 #[macro_export]
 macro_rules! impl_hex_display {
@@ -688,9 +677,7 @@ macro_rules! impl_hex_display {
 }
 
 impl_hex_display!(&'a str);
-impl_hex_display!(CompleteStr<'a>);
 impl_hex_display!(&'a [u8]);
-impl_hex_display!(CompleteByteSlice<'a>);
 
 /// Capture the position of the current fragment
 

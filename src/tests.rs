@@ -18,7 +18,7 @@ use super::LocatedSpan;
 #[cfg(feature = "alloc")]
 use nom::ParseTo;
 use nom::{
-    Compare, CompareResult, ErrorKind, FindSubstring, FindToken, InputIter, InputTake,
+    error::ErrorKind, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputTake,
     InputTakeAtPosition, Offset, Slice,
 };
 
@@ -291,11 +291,13 @@ fn it_should_take_split_chars() {
     );
 }
 
+type TestError<'a> = (LocatedSpan<&'a str>, nom::error::ErrorKind);
+
 #[test]
 fn it_should_split_at_position() {
     let s = StrSpan::new("abcdefghij");
     assert_eq!(
-        s.split_at_position(|c| { c == 'f' }),
+        s.split_at_position::<_, TestError>(|c| { c == 'f' }),
         Ok((
             StrSpan {
                 offset: 5,
@@ -317,7 +319,7 @@ fn it_should_split_at_position() {
 fn it_should_split_at_position1() {
     let s = StrSpan::new("abcdefghij");
     assert_eq!(
-        s.split_at_position1(|c| { c == 'f' }, ErrorKind::Alpha),
-        s.split_at_position(|c| { c == 'f' }),
+        s.split_at_position1::<_, TestError>(|c| { c == 'f' }, ErrorKind::Alpha),
+        s.split_at_position::<_, TestError>(|c| { c == 'f' }),
     );
 }
