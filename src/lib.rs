@@ -277,7 +277,7 @@ where
 
 impl<T> InputTakeAtPosition for LocatedSpan<T>
 where
-    T: InputTakeAtPosition + InputLength + InputIter + std::fmt::Debug,
+    T: InputTakeAtPosition + InputLength + InputIter,
     Self: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Clone,
 {
     type Item = <T as InputIter>::Item;
@@ -313,20 +313,11 @@ where
     where
         P: Fn(Self::Item) -> bool,
     {
-        let result = match self.fragment.position(predicate) {
+        match self.fragment.position(predicate) {
             Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
             Some(n) => Ok(self.take_split(n)),
             None => Err(Err::Incomplete(nom::Needed::Size(1))),
-        };
-
-        match &result {
-            Ok(_) => {}
-            Err(Err::Incomplete(_)) => println!("incomplete"),
-            Err(Err::Error(_)) => println!("error"),
-            Err(Err::Failure(_)) => println!("failure"),
         }
-
-        result
     }
 
     fn split_at_position1_complete<P, E: ParseError<Self>>(
