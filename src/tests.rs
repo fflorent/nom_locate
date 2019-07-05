@@ -14,7 +14,7 @@ mod lib {
 #[cfg(feature = "alloc")]
 use lib::std::*;
 
-use super::LocatedSpan;
+use super::{LocatedSpan, LocatedSpanEx};
 #[cfg(feature = "alloc")]
 use nom::ParseTo;
 use nom::{
@@ -24,6 +24,18 @@ use nom::{
 
 type StrSpan<'a> = LocatedSpan<&'a str>;
 type BytesSpan<'a> = LocatedSpan<&'a [u8]>;
+type StrSpanEx<'a, 'b> = LocatedSpanEx<&'a str, &'b str>;
+type BytesSpanEx<'a, 'b> = LocatedSpanEx<&'a [u8], &'b str>;
+
+#[test]
+fn new_sould_be_the_same_as_new_extra() {
+    let byteinput = &b"foobar"[..];
+    assert_eq!(BytesSpan::new(byteinput),
+               LocatedSpanEx::new_extra(byteinput, ()));
+    let strinput = "foobar";
+    assert_eq!(StrSpan::new(strinput),
+               LocatedSpanEx::new_extra(strinput, ()));
+}
 
 #[test]
 fn it_should_call_new_for_u8_successfully() {
@@ -32,6 +44,7 @@ fn it_should_call_new_for_u8_successfully() {
         offset: 0,
         line: 1,
         fragment: input,
+        extra: (),
     };
 
     assert_eq!(BytesSpan::new(input), output);
@@ -44,6 +57,7 @@ fn it_should_call_new_for_str_successfully() {
         offset: 0,
         line: 1,
         fragment: input,
+        extra: (),
     };
 
     assert_eq!(StrSpan::new(input), output);
@@ -51,29 +65,32 @@ fn it_should_call_new_for_str_successfully() {
 
 #[test]
 fn it_should_slice_for_str() {
-    let str_slice = StrSpan::new("foobar");
+    let str_slice = StrSpanEx::new_extra("foobar", "extra");
     assert_eq!(
         str_slice.slice(1..),
-        StrSpan {
+        StrSpanEx {
             offset: 1,
             line: 1,
             fragment: "oobar",
+            extra: "extra",
         }
     );
     assert_eq!(
         str_slice.slice(1..3),
-        StrSpan {
+        StrSpanEx {
             offset: 1,
             line: 1,
             fragment: "oo",
+            extra: "extra",
         }
     );
     assert_eq!(
         str_slice.slice(..3),
-        StrSpan {
+        StrSpanEx {
             offset: 0,
             line: 1,
             fragment: "foo",
+            extra: "extra",
         }
     );
     assert_eq!(str_slice.slice(..), str_slice);
@@ -81,29 +98,32 @@ fn it_should_slice_for_str() {
 
 #[test]
 fn it_should_slice_for_u8() {
-    let bytes_slice = BytesSpan::new(b"foobar");
+    let bytes_slice = BytesSpanEx::new_extra(b"foobar", "extra");
     assert_eq!(
         bytes_slice.slice(1..),
-        BytesSpan {
+        BytesSpanEx {
             offset: 1,
             line: 1,
             fragment: b"oobar",
+            extra: "extra",
         }
     );
     assert_eq!(
         bytes_slice.slice(1..3),
-        BytesSpan {
+        BytesSpanEx {
             offset: 1,
             line: 1,
             fragment: b"oo",
+            extra: "extra",
         }
     );
     assert_eq!(
         bytes_slice.slice(..3),
-        BytesSpan {
+        BytesSpanEx {
             offset: 0,
             line: 1,
             fragment: b"foo",
+            extra: "extra",
         }
     );
     assert_eq!(bytes_slice.slice(..), bytes_slice);
@@ -113,7 +133,7 @@ fn it_should_slice_for_u8() {
 fn it_should_calculate_columns() {
     let input = StrSpan::new(
         "foo
-        bar",
+        bar"
     );
 
     let bar_idx = input.find_substring("bar").unwrap();
@@ -129,10 +149,11 @@ fn it_should_calculate_columns_accurately_with_non_ascii_chars() {
 #[test]
 #[should_panic(expected = "offset is too big")]
 fn it_should_panic_when_getting_column_if_offset_is_too_big() {
-    let s = StrSpan {
+    let s = StrSpanEx {
         offset: usize::max_value(),
         fragment: "",
         line: 1,
+        extra: "",
     };
     s.get_column();
 }
@@ -260,54 +281,59 @@ fn it_should_calculate_offset_for_str() {
 
 #[test]
 fn it_should_take_chars() {
-    let s = StrSpan::new("abcdefghij");
+    let s = StrSpanEx::new_extra("abcdefghij", "extra");
     assert_eq!(
         s.take(5),
-        StrSpan {
+        StrSpanEx {
             offset: 0,
             line: 1,
             fragment: "abcde",
+            extra: "extra",
         }
     );
 }
 
 #[test]
 fn it_should_take_split_chars() {
-    let s = StrSpan::new("abcdefghij");
+    let s = StrSpanEx::new_extra("abcdefghij", "extra");
     assert_eq!(
         s.take_split(5),
         (
-            StrSpan {
+            StrSpanEx {
                 offset: 5,
                 line: 1,
                 fragment: "fghij",
+                extra: "extra",
             },
-            StrSpan {
+            StrSpanEx {
                 offset: 0,
                 line: 1,
                 fragment: "abcde",
+                extra: "extra",
             }
         )
     );
 }
 
-type TestError<'a> = (LocatedSpan<&'a str>, nom::error::ErrorKind);
+type TestError<'a, 'b> = (LocatedSpanEx<&'a str, &'b str>, nom::error::ErrorKind);
 
 #[test]
 fn it_should_split_at_position() {
-    let s = StrSpan::new("abcdefghij");
+    let s = StrSpanEx::new_extra("abcdefghij", "extra");
     assert_eq!(
         s.split_at_position::<_, TestError>(|c| { c == 'f' }),
         Ok((
-            StrSpan {
+            StrSpanEx {
                 offset: 5,
                 line: 1,
                 fragment: "fghij",
+                extra: "extra",
             },
-            StrSpan {
+            StrSpanEx {
                 offset: 0,
                 line: 1,
                 fragment: "abcde",
+                extra: "extra",
             }
         ))
     );
@@ -317,7 +343,7 @@ fn it_should_split_at_position() {
 
 #[test]
 fn it_should_split_at_position1() {
-    let s = StrSpan::new("abcdefghij");
+    let s = StrSpanEx::new_extra("abcdefghij", "extra");
     assert_eq!(
         s.split_at_position1::<_, TestError>(|c| { c == 'f' }, ErrorKind::Alpha),
         s.split_at_position::<_, TestError>(|c| { c == 'f' }),
