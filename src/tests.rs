@@ -356,9 +356,9 @@ fn it_should_split_at_position1() {
 
 #[test]
 fn it_should_capture_position() {
+    use super::position;
     use nom::bytes::complete::{tag, take_until};
     use nom::IResult;
-    use position;
 
     fn parser<'a>(s: StrSpan<'a>) -> IResult<StrSpan<'a>, (StrSpan<'a>, &'a str)> {
         let (s, _) = take_until("def")(s)?;

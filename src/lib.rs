@@ -75,10 +75,6 @@
 #[cfg_attr(test, macro_use)]
 extern crate alloc;
 
-extern crate bytecount;
-extern crate memchr;
-extern crate nom;
-
 #[cfg(test)]
 mod tests;
 
@@ -412,14 +408,14 @@ where
 ///
 /// NB: This example is an extract from the nom_locate source code.
 ///
-/// ````ignore
+/// ```ignore
 /// #[macro_use]
 /// extern crate nom_locate;
 ///
 /// impl_input_iter!(&'a str, char, char, CharIndices<'a>, Chars<'a>);
 /// impl_input_iter!(&'a [u8], &'a u8, u8, Enumerate<Iter<'a, Self::RawItem>>,
 ///                  Iter<'a, Self::RawItem>);
-/// ````
+/// ```
 #[macro_export]
 macro_rules! impl_input_iter {
     ($fragment_type:ty, $item:ty, $raw_item:ty, $iter:ty, $iter_elem:ty) => {
