@@ -1,6 +1,5 @@
 #[macro_use]
 extern crate nom;
-extern crate nom_locate;
 
 use nom::{error::ErrorKind, AsBytes, FindSubstring, IResult, InputLength, Slice};
 use nom_locate::LocatedSpan;

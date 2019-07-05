@@ -30,11 +30,15 @@ type BytesSpanEx<'a, 'b> = LocatedSpanEx<&'a [u8], &'b str>;
 #[test]
 fn new_sould_be_the_same_as_new_extra() {
     let byteinput = &b"foobar"[..];
-    assert_eq!(BytesSpan::new(byteinput),
-               LocatedSpanEx::new_extra(byteinput, ()));
+    assert_eq!(
+        BytesSpan::new(byteinput),
+        LocatedSpanEx::new_extra(byteinput, ())
+    );
     let strinput = "foobar";
-    assert_eq!(StrSpan::new(strinput),
-               LocatedSpanEx::new_extra(strinput, ()));
+    assert_eq!(
+        StrSpan::new(strinput),
+        LocatedSpanEx::new_extra(strinput, ())
+    );
 }
 
 #[test]
@@ -133,7 +137,7 @@ fn it_should_slice_for_u8() {
 fn it_should_calculate_columns() {
     let input = StrSpan::new(
         "foo
-        bar"
+        bar",
     );
 
     let bar_idx = input.find_substring("bar").unwrap();

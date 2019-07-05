@@ -60,26 +60,20 @@
 //! ## Extra information
 //! You can add arbitrary extra information using LocatedSpanEx.
 //!
-//! ``̀ 
+//! ``̀
 //! use nom_locate::LocatedSpanEx;
 //! type Span<'a> = LocatedSpan<&'a str, String>;
-//! 
+//!
 //! let input = Span::new("Lorem ipsum \n foobar", "filename");
 //! let output = parse_foobar(input);
 //! let extra = output.unwrap().1.extra;
-//! ``̀ 
-
+//! ``̀
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
 
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 #[cfg_attr(test, macro_use)]
 extern crate alloc;
-
-extern crate bytecount;
-extern crate memchr;
-extern crate nom;
 
 #[cfg(test)]
 mod tests;
@@ -132,7 +126,7 @@ pub type LocatedSpan<T> = LocatedSpanEx<T, ()>;
 /// The `LocatedSpanEx` structure can be used as an input of the nom parsers.
 /// It implements all the necessary traits for `LocatedSpanEx<&str,X>` and `LocatedSpanEx<&[u8],X>`
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct LocatedSpanEx<T,X> {
+pub struct LocatedSpanEx<T, X> {
     /// The offset represents the position of the fragment relatively to
     /// the input of the parser. It starts at offset 0.
     pub offset: usize,
@@ -150,7 +144,7 @@ pub struct LocatedSpanEx<T,X> {
     pub extra: X,
 }
 
-impl<T: AsBytes> LocatedSpanEx<T,()> {
+impl<T: AsBytes> LocatedSpanEx<T, ()> {
     /// Create a span for a particular input with default `offset` and
     /// `line` values and empty extra data.
     /// You can compute the column through the `get_column` or `get_utf8_column`
@@ -173,7 +167,7 @@ impl<T: AsBytes> LocatedSpanEx<T,()> {
     /// assert_eq!(span.fragment,       &b"foobar"[..]);
     /// # }
     /// ```
-    pub fn new(program: T) -> LocatedSpanEx<T,()> {
+    pub fn new(program: T) -> LocatedSpanEx<T, ()> {
         LocatedSpanEx {
             line: 1,
             offset: 0,
@@ -206,7 +200,7 @@ impl<T: AsBytes, X> LocatedSpanEx<T, X> {
     /// assert_eq!(span.extra,          "extra");
     /// # }
     /// ```
-    pub fn new_extra(program: T, extra: X) -> LocatedSpanEx<T,X> {
+    pub fn new_extra(program: T, extra: X) -> LocatedSpanEx<T, X> {
         LocatedSpanEx {
             line: 1,
             offset: 0,
@@ -414,14 +408,14 @@ where
 ///
 /// NB: This example is an extract from the nom_locate source code.
 ///
-/// ````ignore
+/// ```ignore
 /// #[macro_use]
 /// extern crate nom_locate;
 ///
 /// impl_input_iter!(&'a str, char, char, CharIndices<'a>, Chars<'a>);
 /// impl_input_iter!(&'a [u8], &'a u8, u8, Enumerate<Iter<'a, Self::RawItem>>,
 ///                  Iter<'a, Self::RawItem>);
-/// ````
+/// ```
 #[macro_export]
 macro_rules! impl_input_iter {
     ($fragment_type:ty, $item:ty, $raw_item:ty, $iter:ty, $iter_elem:ty) => {

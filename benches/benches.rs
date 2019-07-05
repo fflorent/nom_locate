@@ -1,10 +1,6 @@
 #![feature(test)]
 extern crate test;
 
-extern crate nom_locate;
-
-extern crate nom;
-
 use nom::Slice;
 use nom_locate::LocatedSpan;
 
