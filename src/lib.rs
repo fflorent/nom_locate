@@ -48,7 +48,8 @@
 //!     assert_eq!(position, Span {
 //!         offset: 14,
 //!         line: 2,
-//!         fragment: ""
+//!         fragment: "",
+//!         extra: (),
 //!     });
 //!     assert_eq!(position.get_column(), 2);
 //! }

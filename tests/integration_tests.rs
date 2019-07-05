@@ -72,6 +72,7 @@ where
             offset: pos.offset,
             fragment: input
                 .slice(pos.offset..cmp::min(pos.offset + pos.fragment_len, input.input_len())),
+            extra: (),
         };
         assert_eq!(output_item, &expected_item);
         assert_eq!(
@@ -245,7 +246,8 @@ fn test_escaped_string() {
             LocatedSpan {
                 offset: 10,
                 line: 1,
-                fragment: ""
+                fragment: "",
+                extra: (),
             },
             "foo\"bar".to_string()
         ))
