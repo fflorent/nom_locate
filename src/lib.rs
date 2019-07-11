@@ -60,15 +60,14 @@
 //! ## Extra information
 //! You can add arbitrary extra information using LocatedSpanEx.
 //!
-//! ``̀ 
+//! ``̀
 //! use nom_locate::LocatedSpanEx;
 //! type Span<'a> = LocatedSpan<&'a str, String>;
-//! 
+//!
 //! let input = Span::new("Lorem ipsum \n foobar", "filename");
 //! let output = parse_foobar(input);
 //! let extra = output.unwrap().1.extra;
-//! ``̀ 
-
+//! ``̀
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
@@ -132,7 +131,7 @@ pub type LocatedSpan<T> = LocatedSpanEx<T, ()>;
 /// The `LocatedSpanEx` structure can be used as an input of the nom parsers.
 /// It implements all the necessary traits for `LocatedSpanEx<&str,X>` and `LocatedSpanEx<&[u8],X>`
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct LocatedSpanEx<T,X> {
+pub struct LocatedSpanEx<T, X> {
     /// The offset represents the position of the fragment relatively to
     /// the input of the parser. It starts at offset 0.
     pub offset: usize,
@@ -150,7 +149,7 @@ pub struct LocatedSpanEx<T,X> {
     pub extra: X,
 }
 
-impl<T: AsBytes> LocatedSpanEx<T,()> {
+impl<T: AsBytes> LocatedSpanEx<T, ()> {
     /// Create a span for a particular input with default `offset` and
     /// `line` values and empty extra data.
     /// You can compute the column through the `get_column` or `get_utf8_column`
@@ -173,7 +172,7 @@ impl<T: AsBytes> LocatedSpanEx<T,()> {
     /// assert_eq!(span.fragment,       &b"foobar"[..]);
     /// # }
     /// ```
-    pub fn new(program: T) -> LocatedSpanEx<T,()> {
+    pub fn new(program: T) -> LocatedSpanEx<T, ()> {
         LocatedSpanEx {
             line: 1,
             offset: 0,
@@ -206,7 +205,7 @@ impl<T: AsBytes, X> LocatedSpanEx<T, X> {
     /// assert_eq!(span.extra,          "extra");
     /// # }
     /// ```
-    pub fn new_extra(program: T, extra: X) -> LocatedSpanEx<T,X> {
+    pub fn new_extra(program: T, extra: X) -> LocatedSpanEx<T, X> {
         LocatedSpanEx {
             line: 1,
             offset: 0,
@@ -737,4 +736,12 @@ macro_rules! position {
     ($input:expr,) => {
         tag!($input, "")
     };
+}
+
+/// Capture the position of the current fragment
+pub fn position<T>(s: T) -> IResult<T, T>
+where
+    T: InputIter + InputTake,
+{
+    nom::bytes::complete::take(0usize)(s)
 }

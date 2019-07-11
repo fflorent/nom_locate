@@ -30,11 +30,15 @@ type BytesSpanEx<'a, 'b> = LocatedSpanEx<&'a [u8], &'b str>;
 #[test]
 fn new_sould_be_the_same_as_new_extra() {
     let byteinput = &b"foobar"[..];
-    assert_eq!(BytesSpan::new(byteinput),
-               LocatedSpanEx::new_extra(byteinput, ()));
+    assert_eq!(
+        BytesSpan::new(byteinput),
+        LocatedSpanEx::new_extra(byteinput, ())
+    );
     let strinput = "foobar";
-    assert_eq!(StrSpan::new(strinput),
-               LocatedSpanEx::new_extra(strinput, ()));
+    assert_eq!(
+        StrSpan::new(strinput),
+        LocatedSpanEx::new_extra(strinput, ())
+    );
 }
 
 #[test]
@@ -133,7 +137,7 @@ fn it_should_slice_for_u8() {
 fn it_should_calculate_columns() {
     let input = StrSpan::new(
         "foo
-        bar"
+        bar",
     );
 
     let bar_idx = input.find_substring("bar").unwrap();
@@ -348,4 +352,24 @@ fn it_should_split_at_position1() {
         s.split_at_position1::<_, TestError>(|c| { c == 'f' }, ErrorKind::Alpha),
         s.split_at_position::<_, TestError>(|c| { c == 'f' }),
     );
+}
+
+#[test]
+fn it_should_capture_position() {
+    use nom::bytes::complete::{tag, take_until};
+    use nom::IResult;
+    use position;
+
+    fn parser<'a>(s: StrSpan<'a>) -> IResult<StrSpan<'a>, (StrSpan<'a>, String)> {
+        let (s, _) = take_until("def")(s)?;
+        let (s, p) = position(s)?;
+        let (s, t) = tag("def")(s)?;
+        Ok((s, (p, t.to_string())))
+    }
+
+    let s = StrSpan::new("abc\ndefghij");
+    let (_, (s, t)) = parser(s).unwrap();
+    assert_eq!(s.offset, 4);
+    assert_eq!(s.line, 2);
+    assert_eq!(t, "def");
 }
