@@ -14,12 +14,13 @@ The documentation of the crate is available [here](https://docs.rs/nom_locate/).
 The crate provide the [`LocatedSpan` struct](https://docs.rs/nom_locate/struct.LocatedSpan.html) that encapsulates the data. Look at the below example and the explanations:
 
 ````rust
-#[macro_use]
 extern crate nom;
-#[macro_use]
 extern crate nom_locate;
 
-use nom_locate::LocatedSpan;
+use nom::bytes::complete::{tag, take_until};
+use nom::IResult;
+use nom_locate::{position, LocatedSpan};
+
 type Span<'a> = LocatedSpan<&'a str>;
 
 struct Token<'a> {
@@ -28,28 +29,35 @@ struct Token<'a> {
     pub bar: String,
 }
 
-named!(parse_foobar( Span ) -> Token, do_parse!(
-    take_until!("foo") >>
-    position: position!() >>
-    foo: tag!("foo") >>
-    bar: tag!("bar") >>
-    (Token {
-        position: position,
-        foo: foo.to_string(),
-        bar: bar.to_string()
-    })
-));
+fn parse_foobar(s: Span) -> IResult<Span, Token> {
+    let (s, _) = take_until("foo")(s)?;
+    let (s, pos) = position(s)?;
+    let (s, foo) = tag("foo")(s)?;
+    let (s, bar) = tag("bar")(s)?;
 
-fn main () {
+    Ok((
+        s,
+        Token {
+            position: pos,
+            foo: foo.to_string(),
+            bar: bar.to_string(),
+        },
+    ))
+}
+
+fn main() {
     let input = Span::new("Lorem ipsum \n foobar");
     let output = parse_foobar(input);
     let position = output.unwrap().1.position;
-    assert_eq!(position, Span {
-        offset: 14,
-        line: 2,
-        fragment: "",
-        extra: (),
-    });
+    assert_eq!(
+        position,
+        Span {
+            offset: 14,
+            line: 2,
+            fragment: "",
+            extra: (),
+        }
+    );
     assert_eq!(position.get_column(), 2);
 }
 ````
@@ -59,11 +67,12 @@ fn main () {
 Import [nom](https://github.com/geal/nom) and nom_locate.
 
 ````rust
-#[macro_use]
 extern crate nom;
 extern crate nom_locate;
 
-use nom_locate::LocatedSpan;
+use nom::bytes::complete::{tag, take_until};
+use nom::IResult;
+use nom_locate::{position, LocatedSpan};
 ````
 
 Also you'd probably create [type alias](https://doc.rust-lang.org/book/type-aliases.html) for convenience so you don't have to specify the `fragment` type every time:
@@ -86,20 +95,24 @@ struct Token<'a> {
 
 ### Create the parser
 
-The parser has to accept a `Span` as an input. You may use `position!()` in your nom parser, in order to capture the location of your token:
+The parser has to accept a `Span` as an input. You may use `position()` in your nom parser, in order to capture the location of your token:
 
 ````rust
-named!(parse_foobar( Span ) -> Token, do_parse!(
-    take_until!("foo") >>
-    position: position!() >>
-    foo: tag!("foo") >>
-    bar: tag!("bar") >>
-    (Token {
-        position: position,
-        foo: foo.to_string(),
-        bar: bar.to_string()
-    })
-));
+fn parse_foobar(s: Span) -> IResult<Span, Token> {
+    let (s, _) = take_until("foo")(s)?;
+    let (s, pos) = position(s)?;
+    let (s, foo) = tag("foo")(s)?;
+    let (s, bar) = tag("bar")(s)?;
+
+    Ok((
+        s,
+        Token {
+            position: pos,
+            foo: foo.to_string(),
+            bar: bar.to_string(),
+        },
+    ))
+}
 ````
 
 ### Call the parser
