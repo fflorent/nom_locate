@@ -70,7 +70,6 @@
 //! ``̀
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
 
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 #[cfg_attr(test, macro_use)]
