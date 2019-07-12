@@ -360,11 +360,11 @@ fn it_should_capture_position() {
     use nom::IResult;
     use position;
 
-    fn parser<'a>(s: StrSpan<'a>) -> IResult<StrSpan<'a>, (StrSpan<'a>, String)> {
+    fn parser<'a>(s: StrSpan<'a>) -> IResult<StrSpan<'a>, (StrSpan<'a>, &'a str)> {
         let (s, _) = take_until("def")(s)?;
         let (s, p) = position(s)?;
         let (s, t) = tag("def")(s)?;
-        Ok((s, (p, t.to_string())))
+        Ok((s, (p, t.fragment)))
     }
 
     let s = StrSpan::new("abc\ndefghij");

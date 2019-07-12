@@ -9,8 +9,8 @@ type Span<'a> = LocatedSpan<&'a str>;
 
 struct Token<'a> {
     pub position: Span<'a>,
-    pub foo: String,
-    pub bar: String,
+    pub foo: &'a str,
+    pub bar: &'a str,
 }
 
 fn parse_foobar(s: Span) -> IResult<Span, Token> {
@@ -23,8 +23,8 @@ fn parse_foobar(s: Span) -> IResult<Span, Token> {
         s,
         Token {
             position: pos,
-            foo: foo.to_string(),
-            bar: bar.to_string(),
+            foo: foo.fragment,
+            bar: bar.fragment,
         },
     ))
 }
