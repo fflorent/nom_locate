@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## v0.4.0
+
+ - [Support for Nom v5](https://github.com/fflorent/nom_locate/pull/23)
+ - [Add support for extra information to LocatedSpan](https://github.com/fflorent/nom_locate/pull/28)
+
+Thanks to the people who made this release: @ProgVal, @peckpeck, @wycats, @dalance
+
 ## v0.3.1
 
 Patch version:
