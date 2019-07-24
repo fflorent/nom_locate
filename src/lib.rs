@@ -308,6 +308,12 @@ impl<T: AsBytes, X> LocatedSpanEx<T, X> {
     }
 }
 
+impl<T: AsBytes, X> AsBytes for LocatedSpanEx<T, X> {
+    fn as_bytes(&self) -> &[u8] {
+        self.fragment.as_bytes()
+    }
+}
+
 impl<T: InputLength, X> InputLength for LocatedSpanEx<T, X> {
     fn input_len(&self) -> usize {
         self.fragment.input_len()
