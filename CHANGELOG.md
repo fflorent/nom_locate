@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v1.0.0
+
+We decided that the crate was mature enough to release the version 1.0.0. It doesn't bring much new things, still we are proud of this big move! :tada:
+
+ - [Implement AsByte](https://github.com/fflorent/nom_locate/pull/33)
+
 ## v0.4.0
 
  - [Support for Nom v5](https://github.com/fflorent/nom_locate/pull/23)
