@@ -740,8 +740,9 @@ macro_rules! position {
 }
 
 /// Capture the position of the current fragment
-pub fn position<T>(s: T) -> IResult<T, T>
+pub fn position<T, E>(s: T) -> IResult<T, T, E>
 where
+    E: ParseError<T>,
     T: InputIter + InputTake,
 {
     nom::bytes::complete::take(0usize)(s)
