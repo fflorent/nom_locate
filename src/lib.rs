@@ -4,10 +4,8 @@
 //!
 //! ## Features
 //!
-//! This crate exposes two cargo feature flags, `avx-accel` and `simd-accel`.
+//! This crate exposes two cargo feature flags, `generic-simd` and `runtime-dispatch-simd`.
 //! These correspond to the features exposed by [bytecount](https://github.com/llogiq/bytecount).
-//! Compile with SSE support (available on most modern x86_64 processors) using `simd-accel`, or
-//! with AVX support (which likely requires compiling for the native target CPU) with both.
 //!
 //! ## How to use it
 //! The explanations are given in the [README](https://github.com/fflorent/nom_locate/blob/master/README.md) of the Github repository. You may also consult the [FAQ](https://github.com/fflorent/nom_locate/blob/master/FAQ.md).
