@@ -81,6 +81,7 @@ mod tests;
 mod lib {
     #[cfg(feature = "std")]
     pub mod std {
+        pub use std::fmt::{Display, Formatter, Result as FmtResult};
         pub use std::iter::{Enumerate, Map};
         pub use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
         pub use std::slice;
@@ -92,6 +93,8 @@ mod lib {
 
     #[cfg(not(feature = "std"))]
     pub mod std {
+        #[cfg(feature = "alloc")]
+        pub use alloc::fmt::{Display, Formatter, Result as FmtResult};
         #[cfg(feature = "alloc")]
         pub use alloc::string::{String, ToString};
         #[cfg(feature = "alloc")]
@@ -661,10 +664,9 @@ impl<T, X> Offset for LocatedSpanEx<T, X> {
 }
 
 #[cfg(feature = "alloc")]
-impl<T: ToString, X> ToString for LocatedSpanEx<T, X> {
-    #[inline]
-    fn to_string(&self) -> String {
-        self.fragment.to_string()
+impl<T: ToString, X> Display for LocatedSpanEx<T, X> {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        fmt.write_str(&self.fragment.to_string())
     }
 }
 
