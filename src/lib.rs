@@ -60,14 +60,14 @@
 //! ## Extra information
 //! You can add arbitrary extra information using LocatedSpanEx.
 //!
-//! ``̀
+//! ``̀`
 //! use nom_locate::LocatedSpanEx;
 //! type Span<'a> = LocatedSpan<&'a str, String>;
 //!
 //! let input = Span::new("Lorem ipsum \n foobar", "filename");
 //! let output = parse_foobar(input);
 //! let extra = output.unwrap().1.extra;
-//! ``̀
+//! ``̀`
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
