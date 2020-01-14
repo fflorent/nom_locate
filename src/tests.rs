@@ -68,6 +68,16 @@ fn it_should_call_new_for_str_successfully() {
 }
 
 #[test]
+fn it_should_ignore_extra_for_equality() {
+    let input = &"foobar"[..];
+
+    assert_eq!(
+        StrSpanEx::new_extra(input, "foo"),
+        StrSpanEx::new_extra(input, "bar")
+    );
+}
+
+#[test]
 fn it_should_slice_for_str() {
     let str_slice = StrSpanEx::new_extra("foobar", "extra");
     assert_eq!(
