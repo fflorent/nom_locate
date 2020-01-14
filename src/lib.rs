@@ -315,6 +315,8 @@ impl<T: AsBytes + PartialEq, X> PartialEq for LocatedSpanEx<T, X> {
     }
 }
 
+impl<T: AsBytes + Eq, X> Eq for LocatedSpanEx<T, X> {}
+
 impl<T: AsBytes, X> AsBytes for LocatedSpanEx<T, X> {
     fn as_bytes(&self) -> &[u8] {
         self.fragment.as_bytes()
