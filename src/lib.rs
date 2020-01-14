@@ -140,7 +140,7 @@ pub struct LocatedSpanEx<T, X> {
     /// The fragment represents a part of the input of the parser.
     pub fragment: T,
 
-    /// Extra information that can be embededd by the user.
+    /// Extra information that can be embedded by the user.
     /// Example: the parsed file name
     pub extra: X,
 }
