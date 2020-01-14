@@ -56,7 +56,8 @@
 //! ```
 //!
 //! ## Extra information
-//! You can add arbitrary extra information using LocatedSpanEx.
+//! You can add arbitrary extra information using `LocatedSpanEx`.
+//! This extra property is not used when comparing two `LocatedSpanEx`s.
 //!
 //! ``̀`
 //! use nom_locate::LocatedSpanEx;
@@ -126,7 +127,7 @@ pub type LocatedSpan<T> = LocatedSpanEx<T, ()>;
 ///
 /// The `LocatedSpanEx` structure can be used as an input of the nom parsers.
 /// It implements all the necessary traits for `LocatedSpanEx<&str,X>` and `LocatedSpanEx<&[u8],X>`
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct LocatedSpanEx<T, X> {
     /// The offset represents the position of the fragment relatively to
     /// the input of the parser. It starts at offset 0.
@@ -308,6 +309,14 @@ impl<T: AsBytes, X> LocatedSpanEx<T, X> {
         naive_num_chars(before_self) + 1
     }
 }
+
+impl<T: AsBytes + PartialEq, X> PartialEq for LocatedSpanEx<T, X> {
+    fn eq(&self, other: &Self) -> bool {
+        self.line == other.line && self.offset == other.offset && self.fragment == other.fragment
+    }
+}
+
+impl<T: AsBytes + Eq, X> Eq for LocatedSpanEx<T, X> {}
 
 impl<T: AsBytes, X> AsBytes for LocatedSpanEx<T, X> {
     fn as_bytes(&self) -> &[u8] {
