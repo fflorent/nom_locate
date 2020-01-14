@@ -56,7 +56,8 @@
 //! ```
 //!
 //! ## Extra information
-//! You can add arbitrary extra information using `LocatedSpanEx`. This extra property is not used when comparing two `LocatedSpanEx`s.
+//! You can add arbitrary extra information using `LocatedSpanEx`.
+//! This extra property is not used when comparing two `LocatedSpanEx`s.
 //!
 //! ``̀`
 //! use nom_locate::LocatedSpanEx;
