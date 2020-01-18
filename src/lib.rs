@@ -154,6 +154,11 @@ impl<T: AsBytes> LocatedSpanEx<T, ()> {
     ///
     /// `offset` starts at 0, `line` starts at 1, and `column` starts at 1.
     ///
+    /// Do not use this constructor in parser functions; `nom` and
+    /// `nom_locate` assume span offsets are relative to the beginning of the
+    /// same input. In these cases, you probably want to use the
+    /// `nom::traits::Slice` trait instead.
+    ///
     /// # Example of use
     ///
     /// ```
@@ -185,6 +190,11 @@ impl<T: AsBytes, X> LocatedSpanEx<T, X> {
     /// methods.
     ///
     /// `offset` starts at 0, `line` starts at 1, and `column` starts at 1.
+    ///
+    /// Do not use this constructor in parser functions; `nom` and
+    /// `nom_locate` assume span offsets are relative to the beginning of the
+    /// same input. In these cases, you probably want to use the
+    /// `nom::traits::Slice` trait instead.
     ///
     /// # Example of use
     ///
