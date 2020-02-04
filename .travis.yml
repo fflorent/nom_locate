@@ -51,7 +51,7 @@ matrix:
     - rust: beta
       env: FEATURES='default'
     - rust: beta
-      env: FEATURES='alloc
+      env: FEATURES='alloc'
     - rust: beta
       env: FEATURES=''
 
