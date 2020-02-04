@@ -44,10 +44,14 @@ matrix:
     - rust: stable
       env: FEATURES='default'
     - rust: stable
+      env: FEATURES='alloc'
+    - rust: stable
       env: FEATURES=''
 
     - rust: beta
       env: FEATURES='default'
+    - rust: beta
+      env: FEATURES='alloc
     - rust: beta
       env: FEATURES=''
 
