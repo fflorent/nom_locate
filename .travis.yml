@@ -44,20 +44,23 @@ matrix:
     - rust: stable
       env: FEATURES='default'
     - rust: stable
+      env: FEATURES=''
+
+    - rust: beta
+      env: FEATURES='default'
+    - rust: beta
+      env: FEATURES=''
+
+    - rust: nightly
+      env: FEATURES='default'
+    - rust: nightly
       env: FEATURES='alloc'
+    - rust: nightly
+      env: FEATURES=''
+
+  allow_failures:
     - rust: stable
-      env: FEATURES=''
+      env: FEATURES='alloc'
 
     - rust: beta
-      env: FEATURES='default'
-    - rust: beta
       env: FEATURES='alloc'
-    - rust: beta
-      env: FEATURES=''
-
-    - rust: nightly
-      env: FEATURES='default'
-    - rust: nightly
-      env: FEATURES='alloc'
-    - rust: nightly
-      env: FEATURES=''
