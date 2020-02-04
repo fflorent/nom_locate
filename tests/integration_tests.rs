@@ -10,7 +10,7 @@ use std::ops::{Range, RangeFull};
 type StrSpan<'a> = LocatedSpan<&'a str>;
 type BytesSpan<'a> = LocatedSpan<&'a [u8]>;
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "std", feature = "alloc"))]
 named!(simple_parser_str< StrSpan, Vec<StrSpan> >, do_parse!(
     foo: ws!(tag!("foo")) >>
     bar: ws!(tag!("bar")) >>
@@ -24,7 +24,7 @@ named!(simple_parser_str< StrSpan, Vec<StrSpan> >, do_parse!(
     })
 ));
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "std", feature = "alloc"))]
 named!(simple_parser_u8< BytesSpan, Vec<BytesSpan> >, do_parse!(
     foo: ws!(tag!("foo")) >>
     bar: ws!(tag!("bar")) >>
@@ -84,7 +84,7 @@ where
     }
 }
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "std", feature = "alloc"))]
 #[test]
 fn it_locates_str_fragments() {
     test_str_fragments(
@@ -151,7 +151,7 @@ fn it_locates_str_fragments() {
     );
 }
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "std", feature = "alloc"))]
 #[test]
 fn it_locates_u8_fragments() {
     test_str_fragments(
@@ -257,7 +257,7 @@ fn test_escaped_string() {
     );
 }
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "std", feature = "alloc"))]
 named!(plague<StrSpan, Vec<StrSpan> >, do_parse!(
     bacille: call!(find_substring, "le bacille") >>
     bacille_pronouns: many0!(call!(find_substring, "il ")) >>
@@ -271,7 +271,7 @@ named!(plague<StrSpan, Vec<StrSpan> >, do_parse!(
     })
 ));
 
-#[cfg(feature = "alloc")]
+#[cfg(any(feature = "std", feature = "alloc"))]
 #[test]
 fn it_locates_complex_fragments() {
     // Lorem ipsum is boring. Let's quote Camus' Plague.
