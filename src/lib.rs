@@ -730,6 +730,7 @@ impl_extend_into!(&'a str, char, String);
 #[cfg(feature = "alloc")]
 impl_extend_into!(&'a [u8], u8, Vec<u8>);
 
+#[cfg(feature = "std")]
 #[macro_export]
 macro_rules! impl_hex_display {
     ($fragment_type:ty) => {
@@ -746,7 +747,9 @@ macro_rules! impl_hex_display {
     };
 }
 
+#[cfg(feature = "std")]
 impl_hex_display!(&'a str);
+#[cfg(feature = "std")]
 impl_hex_display!(&'a [u8]);
 
 /// Capture the position of the current fragment

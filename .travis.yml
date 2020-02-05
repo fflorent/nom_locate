@@ -61,3 +61,10 @@ matrix:
       env: FEATURES='alloc'
     - rust: nightly
       env: FEATURES=''
+
+  allow_failures:
+    - rust: stable
+      env: FEATURES='alloc'
+
+    - rust: beta
+      env: FEATURES='alloc'
