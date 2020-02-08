@@ -23,8 +23,8 @@ fn parse_foobar(s: Span) -> IResult<Span, Token> {
         s,
         Token {
             position: pos,
-            foo: foo.fragment,
-            bar: bar.fragment,
+            foo: foo.fragment(),
+            bar: bar.fragment(),
         },
     ))
 }
@@ -35,11 +35,13 @@ fn main() {
     let position = output.unwrap().1.position;
     assert_eq!(
         position,
-        Span {
-            offset: 14,
-            line: 2,
-            fragment: "",
-            extra: (),
+        unsafe {
+            Span::new_from_raw_offset(
+                14, // offset
+                2, // line
+                "", // fragment
+                (), // extra
+            )
         }
     );
     assert_eq!(position.get_column(), 2);
