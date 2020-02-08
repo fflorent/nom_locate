@@ -43,12 +43,9 @@
 //!     let input = Span::new("Lorem ipsum \n foobar");
 //!     let output = parse_foobar(input);
 //!     let position = output.unwrap().1.position;
-//!     assert_eq!(position, Span {
-//!         offset: 14,
-//!         line: 2,
-//!         fragment: "",
-//!         extra: (),
-//!     });
+//!     assert_eq!(position.location_offset(), 14);
+//!     assert_eq!(position.location_line(), 2);
+//!     assert_eq!(position.fragment(), &"");
 //!     assert_eq!(position.get_column(), 2);
 //! }
 //! # #[cfg(not(feature = "alloc"))]
@@ -131,15 +128,15 @@ pub type LocatedSpan<T> = LocatedSpanEx<T, ()>;
 pub struct LocatedSpanEx<T, X> {
     /// The offset represents the position of the fragment relatively to
     /// the input of the parser. It starts at offset 0.
-    pub offset: usize,
+    offset: usize,
 
     /// The line number of the fragment relatively to the input of the
     /// parser. It starts at line 1.
-    pub line: u32,
+    line: u32,
 
     /// The fragment that is spanned.
     /// The fragment represents a part of the input of the parser.
-    pub fragment: T,
+    fragment: T,
 
     /// Extra information that can be embedded by the user.
     /// Example: the parsed file name
@@ -168,16 +165,16 @@ impl<T: AsBytes> LocatedSpanEx<T, ()> {
     /// # fn main() {
     /// let span = LocatedSpanEx::new(b"foobar");
     ///
-    /// assert_eq!(span.offset,         0);
-    /// assert_eq!(span.line,           1);
-    /// assert_eq!(span.get_column(),   1);
-    /// assert_eq!(span.fragment,       &b"foobar"[..]);
+    /// assert_eq!(span.location_offset(), 0);
+    /// assert_eq!(span.location_line(),   1);
+    /// assert_eq!(span.get_column(),      1);
+    /// assert_eq!(span.fragment(),        &&b"foobar"[..]);
     /// # }
     /// ```
     pub fn new(program: T) -> LocatedSpanEx<T, ()> {
         LocatedSpanEx {
-            line: 1,
             offset: 0,
+            line: 1,
             fragment: program,
             extra: (),
         }
@@ -205,20 +202,51 @@ impl<T: AsBytes, X> LocatedSpanEx<T, X> {
     /// # fn main() {
     /// let span = LocatedSpanEx::new_extra(b"foobar", "extra");
     ///
-    /// assert_eq!(span.offset,         0);
-    /// assert_eq!(span.line,           1);
-    /// assert_eq!(span.get_column(),   1);
-    /// assert_eq!(span.fragment,       &b"foobar"[..]);
-    /// assert_eq!(span.extra,          "extra");
+    /// assert_eq!(span.location_offset(), 0);
+    /// assert_eq!(span.location_line(),   1);
+    /// assert_eq!(span.get_column(),      1);
+    /// assert_eq!(span.fragment(),        &&b"foobar"[..]);
+    /// assert_eq!(span.extra,             "extra");
     /// # }
     /// ```
     pub fn new_extra(program: T, extra: X) -> LocatedSpanEx<T, X> {
         LocatedSpanEx {
-            line: 1,
             offset: 0,
+            line: 1,
             fragment: program,
             extra: extra,
         }
+    }
+
+    /// Similar to `new_extra`, but allows overriding offset and line.
+    /// This is unsafe, because giving an offset too large may result in
+    /// undefined behavior, as some methods move back along the fragment
+    /// assuming any negative index within the offset is valid.
+    pub unsafe fn new_from_raw_offset(offset: usize, line: u32, fragment: T, extra: X) -> LocatedSpanEx<T, X> {
+        LocatedSpanEx {
+            offset,
+            line,
+            fragment,
+            extra,
+        }
+    }
+
+    /// The offset represents the position of the fragment relatively to
+    /// the input of the parser. It starts at offset 0.
+    pub fn location_offset(&self) -> usize {
+        self.offset
+    }
+
+    /// The line number of the fragment relatively to the input of the
+    /// parser. It starts at line 1.
+    pub fn location_line(&self) -> u32 {
+        self.line
+    }
+
+    /// The fragment that is spanned.
+    /// The fragment represents a part of the input of the parser.
+    pub fn fragment(&self) -> &T {
+        &self.fragment
     }
 
     fn get_columns_and_bytes_before(&self) -> (usize, &[u8]) {

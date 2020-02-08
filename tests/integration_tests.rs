@@ -63,19 +63,17 @@ where
     // assert!(res.is_ok(), "the parser should run successfully");
     let (remaining, output) = res;
     assert!(
-        remaining.fragment.input_len() == 0,
+        remaining.fragment().input_len() == 0,
         "no input should remain"
     );
     assert_eq!(output.len(), positions.len());
     for (output_item, pos) in output.iter().zip(positions.iter()) {
-        let expected_item = LocatedSpan {
-            line: pos.line,
-            offset: pos.offset,
-            fragment: input
-                .slice(pos.offset..cmp::min(pos.offset + pos.fragment_len, input.input_len())),
-            extra: (),
-        };
-        assert_eq!(output_item, &expected_item);
+        assert_eq!(output_item.location_offset(), pos.offset);
+        assert_eq!(output_item.location_line(), pos.line);
+        assert_eq!(
+            output_item.fragment(),
+            &input.slice(pos.offset..cmp::min(pos.offset + pos.fragment_len, input.input_len()))
+        );
         assert_eq!(
             output_item.get_utf8_column(),
             pos.column,
@@ -243,18 +241,13 @@ fn test_escaped_string() {
         char!('"')
     ));
 
-    assert_eq!(
-        string(LocatedSpan::new("\"foo\\\"bar\"")),
-        Ok((
-            LocatedSpan {
-                offset: 10,
-                line: 1,
-                fragment: "",
-                extra: (),
-            },
-            "foo\"bar".to_string()
-        ))
-    );
+    let res = string(LocatedSpan::new("\"foo\\\"bar\""));
+    assert!(res.is_ok());
+    let (span, remaining) = res.unwrap();
+    assert_eq!(span.location_offset(), 10);
+    assert_eq!(span.location_line(), 1);
+    assert_eq!(span.fragment(), &"");
+    assert_eq!(remaining, "foo\"bar".to_string());
 }
 
 #[cfg(any(feature = "std", feature = "alloc"))]
