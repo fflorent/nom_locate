@@ -222,12 +222,10 @@ fn it_should_compare_elements() {
         StrSpan::new("foobar").compare("foobarbaz"),
         CompareResult::Incomplete
     );
-
-    // FIXME: WTF! The line below doesn't compile unless we stop comparing
-    // LocatedSpan<&[u8]> with &str
-    //
-    // assert_eq!(BytesSpan::new(b"foobar").compare(b"foo"), CompareResult::Ok);
-    assert_eq!(BytesSpan::new(b"foobar").compare("foo"), CompareResult::Ok);
+    assert_eq!(
+        BytesSpan::new(b"foobar").compare(b"foo" as &[u8]),
+        CompareResult::Ok
+    );
 }
 
 #[test]
