@@ -14,7 +14,7 @@ mod lib {
 #[cfg(feature = "alloc")]
 use lib::std::*;
 
-use super::{LocatedSpan, LocatedSpanEx};
+use super::LocatedSpan;
 #[cfg(feature = "alloc")]
 use nom::ParseTo;
 use nom::{
@@ -24,21 +24,18 @@ use nom::{
 
 type StrSpan<'a> = LocatedSpan<&'a str>;
 type BytesSpan<'a> = LocatedSpan<&'a [u8]>;
-type StrSpanEx<'a, 'b> = LocatedSpanEx<&'a str, &'b str>;
-type BytesSpanEx<'a, 'b> = LocatedSpanEx<&'a [u8], &'b str>;
+type StrSpanEx<'a, 'b> = LocatedSpan<&'a str, &'b str>;
+type BytesSpanEx<'a, 'b> = LocatedSpan<&'a [u8], &'b str>;
 
 #[test]
 fn new_sould_be_the_same_as_new_extra() {
     let byteinput = &b"foobar"[..];
     assert_eq!(
         BytesSpan::new(byteinput),
-        LocatedSpanEx::new_extra(byteinput, ())
+        LocatedSpan::new_extra(byteinput, ())
     );
     let strinput = "foobar";
-    assert_eq!(
-        StrSpan::new(strinput),
-        LocatedSpanEx::new_extra(strinput, ())
-    );
+    assert_eq!(StrSpan::new(strinput), LocatedSpan::new_extra(strinput, ()));
 }
 
 #[test]
@@ -327,7 +324,7 @@ fn it_should_take_split_chars() {
     );
 }
 
-type TestError<'a, 'b> = (LocatedSpanEx<&'a str, &'b str>, nom::error::ErrorKind);
+type TestError<'a, 'b> = (LocatedSpan<&'a str, &'b str>, nom::error::ErrorKind);
 
 #[test]
 fn it_should_split_at_position() {

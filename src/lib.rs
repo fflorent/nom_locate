@@ -53,11 +53,11 @@
 //! ```
 //!
 //! ## Extra information
-//! You can add arbitrary extra information using `LocatedSpanEx`.
-//! This extra property is not used when comparing two `LocatedSpanEx`s.
+//! You can also add arbitrary extra information using the extra property of `LocatedSpan`.
+//! This property is not used when comparing two `LocatedSpan`s.
 //!
 //! ``̀`
-//! use nom_locate::LocatedSpanEx;
+//! use nom_locate::LocatedSpan;
 //! type Span<'a> = LocatedSpan<&'a str, String>;
 //!
 //! let input = Span::new("Lorem ipsum \n foobar", "filename");
@@ -115,17 +115,13 @@ use nom::{
     InputLength, InputTake, InputTakeAtPosition, Offset, ParseTo, Slice,
 };
 
-/// A LocatedSpan is a set of meta information about the location of a token.
-/// It has the same properties as a LocatedSpanEx.
-pub type LocatedSpan<T> = LocatedSpanEx<T, ()>;
-
-/// A LocatedSpanEx is a set of meta information about the location of a token, including extra
+/// A LocatedSpan is a set of meta information about the location of a token, including extra
 /// information.
 ///
-/// The `LocatedSpanEx` structure can be used as an input of the nom parsers.
-/// It implements all the necessary traits for `LocatedSpanEx<&str,X>` and `LocatedSpanEx<&[u8],X>`
+/// The `LocatedSpan` structure can be used as an input of the nom parsers.
+/// It implements all the necessary traits for `LocatedSpan<&str,X>` and `LocatedSpan<&[u8],X>`
 #[derive(Debug, Clone, Copy)]
-pub struct LocatedSpanEx<T, X> {
+pub struct LocatedSpan<T, X = ()> {
     /// The offset represents the position of the fragment relatively to
     /// the input of the parser. It starts at offset 0.
     offset: usize,
@@ -143,7 +139,7 @@ pub struct LocatedSpanEx<T, X> {
     pub extra: X,
 }
 
-impl<T: AsBytes> LocatedSpanEx<T, ()> {
+impl<T: AsBytes> LocatedSpan<T, ()> {
     /// Create a span for a particular input with default `offset` and
     /// `line` values and empty extra data.
     /// You can compute the column through the `get_column` or `get_utf8_column`
@@ -160,10 +156,10 @@ impl<T: AsBytes> LocatedSpanEx<T, ()> {
     ///
     /// ```
     /// # extern crate nom_locate;
-    /// use nom_locate::LocatedSpanEx;
+    /// use nom_locate::LocatedSpan;
     ///
     /// # fn main() {
-    /// let span = LocatedSpanEx::new(b"foobar");
+    /// let span = LocatedSpan::new(b"foobar");
     ///
     /// assert_eq!(span.location_offset(), 0);
     /// assert_eq!(span.location_line(),   1);
@@ -171,8 +167,8 @@ impl<T: AsBytes> LocatedSpanEx<T, ()> {
     /// assert_eq!(span.fragment(),        &&b"foobar"[..]);
     /// # }
     /// ```
-    pub fn new(program: T) -> LocatedSpanEx<T, ()> {
-        LocatedSpanEx {
+    pub fn new(program: T) -> LocatedSpan<T, ()> {
+        LocatedSpan {
             offset: 0,
             line: 1,
             fragment: program,
@@ -181,7 +177,7 @@ impl<T: AsBytes> LocatedSpanEx<T, ()> {
     }
 }
 
-impl<T: AsBytes, X> LocatedSpanEx<T, X> {
+impl<T: AsBytes, X> LocatedSpan<T, X> {
     /// Create a span for a particular input with default `offset` and
     /// `line` values. You can compute the column through the `get_column` or `get_utf8_column`
     /// methods.
@@ -197,10 +193,10 @@ impl<T: AsBytes, X> LocatedSpanEx<T, X> {
     ///
     /// ```
     /// # extern crate nom_locate;
-    /// use nom_locate::LocatedSpanEx;
+    /// use nom_locate::LocatedSpan;
     ///
     /// # fn main() {
-    /// let span = LocatedSpanEx::new_extra(b"foobar", "extra");
+    /// let span = LocatedSpan::new_extra(b"foobar", "extra");
     ///
     /// assert_eq!(span.location_offset(), 0);
     /// assert_eq!(span.location_line(),   1);
@@ -209,8 +205,8 @@ impl<T: AsBytes, X> LocatedSpanEx<T, X> {
     /// assert_eq!(span.extra,             "extra");
     /// # }
     /// ```
-    pub fn new_extra(program: T, extra: X) -> LocatedSpanEx<T, X> {
-        LocatedSpanEx {
+    pub fn new_extra(program: T, extra: X) -> LocatedSpan<T, X> {
+        LocatedSpan {
             offset: 0,
             line: 1,
             fragment: program,
@@ -222,8 +218,13 @@ impl<T: AsBytes, X> LocatedSpanEx<T, X> {
     /// This is unsafe, because giving an offset too large may result in
     /// undefined behavior, as some methods move back along the fragment
     /// assuming any negative index within the offset is valid.
-    pub unsafe fn new_from_raw_offset(offset: usize, line: u32, fragment: T, extra: X) -> LocatedSpanEx<T, X> {
-        LocatedSpanEx {
+    pub unsafe fn new_from_raw_offset(
+        offset: usize,
+        line: u32,
+        fragment: T,
+        extra: X,
+    ) -> LocatedSpan<T, X> {
+        LocatedSpan {
             offset,
             line,
             fragment,
@@ -278,11 +279,11 @@ impl<T: AsBytes, X> LocatedSpanEx<T, X> {
     ///
     /// # extern crate nom_locate;
     /// # extern crate nom;
-    /// # use nom_locate::LocatedSpanEx;
+    /// # use nom_locate::LocatedSpan;
     /// # use nom::Slice;
     /// #
     /// # fn main() {
-    /// let span = LocatedSpanEx::new("foobar");
+    /// let span = LocatedSpan::new("foobar");
     ///
     /// assert_eq!(span.slice(3..).get_column(), 4);
     /// # }
@@ -304,11 +305,11 @@ impl<T: AsBytes, X> LocatedSpanEx<T, X> {
     ///
     /// # extern crate nom_locate;
     /// # extern crate nom;
-    /// # use nom_locate::LocatedSpanEx;
+    /// # use nom_locate::LocatedSpan;
     /// # use nom::{Slice, FindSubstring};
     /// #
     /// # fn main() {
-    /// let span = LocatedSpanEx::new("メカジキ");
+    /// let span = LocatedSpan::new("メカジキ");
     /// let indexOf3dKanji = span.find_substring("ジ").unwrap();
     ///
     /// assert_eq!(span.slice(indexOf3dKanji..).get_column(), 7);
@@ -331,11 +332,11 @@ impl<T: AsBytes, X> LocatedSpanEx<T, X> {
     ///
     /// # extern crate nom_locate;
     /// # extern crate nom;
-    /// # use nom_locate::LocatedSpanEx;
+    /// # use nom_locate::LocatedSpan;
     /// # use nom::{Slice, FindSubstring};
     /// #
     /// # fn main() {
-    /// let span = LocatedSpanEx::new("メカジキ");
+    /// let span = LocatedSpan::new("メカジキ");
     /// let indexOf3dKanji = span.find_substring("ジ").unwrap();
     ///
     /// assert_eq!(span.slice(indexOf3dKanji..).get_column(), 7);
@@ -348,27 +349,27 @@ impl<T: AsBytes, X> LocatedSpanEx<T, X> {
     }
 }
 
-impl<T: AsBytes + PartialEq, X> PartialEq for LocatedSpanEx<T, X> {
+impl<T: AsBytes + PartialEq, X> PartialEq for LocatedSpan<T, X> {
     fn eq(&self, other: &Self) -> bool {
         self.line == other.line && self.offset == other.offset && self.fragment == other.fragment
     }
 }
 
-impl<T: AsBytes + Eq, X> Eq for LocatedSpanEx<T, X> {}
+impl<T: AsBytes + Eq, X> Eq for LocatedSpan<T, X> {}
 
-impl<T: AsBytes, X> AsBytes for LocatedSpanEx<T, X> {
+impl<T: AsBytes, X> AsBytes for LocatedSpan<T, X> {
     fn as_bytes(&self) -> &[u8] {
         self.fragment.as_bytes()
     }
 }
 
-impl<T: InputLength, X> InputLength for LocatedSpanEx<T, X> {
+impl<T: InputLength, X> InputLength for LocatedSpan<T, X> {
     fn input_len(&self) -> usize {
         self.fragment.input_len()
     }
 }
 
-impl<T, X> InputTake for LocatedSpanEx<T, X>
+impl<T, X> InputTake for LocatedSpan<T, X>
 where
     Self: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
 {
@@ -381,7 +382,7 @@ where
     }
 }
 
-impl<T, X> InputTakeAtPosition for LocatedSpanEx<T, X>
+impl<T, X> InputTakeAtPosition for LocatedSpan<T, X>
 where
     T: InputTakeAtPosition + InputLength + InputIter,
     Self: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Clone,
@@ -451,7 +452,7 @@ where
 /// Implement nom::InputIter for a specific fragment type
 ///
 /// # Parameters
-/// * `$fragment_type` - The LocatedSpanEx's `fragment` type
+/// * `$fragment_type` - The LocatedSpan's `fragment` type
 /// * `$item` - The type of the item being iterated (a reference for fragments of type `&[T]`).
 /// * `$raw_item` - The raw type of the item being iterating (dereferenced type of $item for
 /// `&[T]`, otherwise same as `$item`)
@@ -473,7 +474,7 @@ where
 #[macro_export]
 macro_rules! impl_input_iter {
     ($fragment_type:ty, $item:ty, $raw_item:ty, $iter:ty, $iter_elem:ty) => {
-        impl<'a, X> InputIter for LocatedSpanEx<$fragment_type, X> {
+        impl<'a, X> InputIter for LocatedSpan<$fragment_type, X> {
             type Item = $item;
             type Iter = $iter;
             type IterElem = $iter_elem;
@@ -512,8 +513,8 @@ impl_input_iter!(
 /// Implement nom::Compare for a specific fragment type.
 ///
 /// # Parameters
-/// * `$fragment_type` - The LocatedSpanEx's `fragment` type
-/// * `$compare_to_type` - The type to be comparable to `LocatedSpanEx<$fragment_type, X>`
+/// * `$fragment_type` - The LocatedSpan's `fragment` type
+/// * `$compare_to_type` - The type to be comparable to `LocatedSpan<$fragment_type, X>`
 ///
 /// # Example of use
 ///
@@ -529,7 +530,7 @@ impl_input_iter!(
 #[macro_export]
 macro_rules! impl_compare {
     ( $fragment_type:ty, $compare_to_type:ty ) => {
-        impl<'a, 'b, X> Compare<$compare_to_type> for LocatedSpanEx<$fragment_type, X> {
+        impl<'a, 'b, X> Compare<$compare_to_type> for LocatedSpan<$fragment_type, X> {
             #[inline(always)]
             fn compare(&self, t: $compare_to_type) -> CompareResult {
                 self.fragment.compare(t)
@@ -547,20 +548,20 @@ impl_compare!(&'b str, &'a str);
 impl_compare!(&'b [u8], &'a [u8]);
 impl_compare!(&'b [u8], &'a str);
 
-impl<A: Compare<B>, B, X, Y> Compare<LocatedSpanEx<B, X>> for LocatedSpanEx<A, Y> {
+impl<A: Compare<B>, B, X, Y> Compare<LocatedSpan<B, X>> for LocatedSpan<A, Y> {
     #[inline(always)]
-    fn compare(&self, t: LocatedSpanEx<B, X>) -> CompareResult {
+    fn compare(&self, t: LocatedSpan<B, X>) -> CompareResult {
         self.fragment.compare(t.fragment)
     }
 
     #[inline(always)]
-    fn compare_no_case(&self, t: LocatedSpanEx<B, X>) -> CompareResult {
+    fn compare_no_case(&self, t: LocatedSpan<B, X>) -> CompareResult {
         self.fragment.compare_no_case(t.fragment)
     }
 }
 
 // TODO(future): replace impl_compare! with below default specialization?
-// default impl<A: Compare<B>, B, X> Compare<B> for LocatedSpanEx<A, X> {
+// default impl<A: Compare<B>, B, X> Compare<B> for LocatedSpan<A, X> {
 //     #[inline(always)]
 //     fn compare(&self, t: B) -> CompareResult {
 //         self.fragment.compare(t)
@@ -578,10 +579,10 @@ impl<A: Compare<B>, B, X, Y> Compare<LocatedSpanEx<B, X>> for LocatedSpanEx<A, Y
 /// unless you use a specific Range.
 ///
 /// # Parameters
-/// * `$fragment_type` - The LocatedSpanEx's `fragment` type
+/// * `$fragment_type` - The LocatedSpan's `fragment` type
 /// * `$range_type` - The range type to be use with `slice()`.
 /// * `$can_return_self` - A bool-returning lambda telling whether we
-///    can avoid creating a new `LocatedSpanEx`. If unsure, use `|_| false`.
+///    can avoid creating a new `LocatedSpan`. If unsure, use `|_| false`.
 ///
 /// # Example of use
 ///
@@ -605,7 +606,7 @@ impl<A: Compare<B>, B, X, Y> Compare<LocatedSpanEx<B, X>> for LocatedSpanEx<A, Y
 #[macro_export]
 macro_rules! impl_slice_range {
     ( $fragment_type:ty, $range_type:ty, $can_return_self:expr ) => {
-        impl<'a, X: Clone> Slice<$range_type> for LocatedSpanEx<$fragment_type, X> {
+        impl<'a, X: Clone> Slice<$range_type> for LocatedSpan<$fragment_type, X> {
             fn slice(&self, range: $range_type) -> Self {
                 if $can_return_self(&range) {
                     return self.clone();
@@ -613,7 +614,7 @@ macro_rules! impl_slice_range {
                 let next_fragment = self.fragment.slice(range);
                 let consumed_len = self.fragment.offset(&next_fragment);
                 if consumed_len == 0 {
-                    return LocatedSpanEx {
+                    return LocatedSpan {
                         line: self.line,
                         offset: self.offset,
                         fragment: next_fragment,
@@ -629,7 +630,7 @@ macro_rules! impl_slice_range {
                 let number_of_lines = iter.count() as u32;
                 let next_line = self.line + number_of_lines;
 
-                LocatedSpanEx {
+                LocatedSpan {
                     line: next_line,
                     offset: next_offset,
                     fragment: next_fragment,
@@ -647,7 +648,7 @@ macro_rules! impl_slice_range {
 /// * `RangeFull`
 ///
 /// # Parameters
-/// * `$fragment_type` - The LocatedSpanEx's `fragment` type
+/// * `$fragment_type` - The LocatedSpan's `fragment` type
 ///
 /// # Example of use
 ///
@@ -673,13 +674,13 @@ macro_rules! impl_slice_ranges {
 impl_slice_ranges! {&'a str}
 impl_slice_ranges! {&'a [u8]}
 
-impl<Fragment: FindToken<Token>, Token, X> FindToken<Token> for LocatedSpanEx<Fragment, X> {
+impl<Fragment: FindToken<Token>, Token, X> FindToken<Token> for LocatedSpan<Fragment, X> {
     fn find_token(&self, token: Token) -> bool {
         self.fragment.find_token(token)
     }
 }
 
-impl<'a, T, X> FindSubstring<&'a str> for LocatedSpanEx<T, X>
+impl<'a, T, X> FindSubstring<&'a str> for LocatedSpan<T, X>
 where
     T: FindSubstring<&'a str>,
 {
@@ -689,7 +690,7 @@ where
     }
 }
 
-impl<R: FromStr, T, X> ParseTo<R> for LocatedSpanEx<T, X>
+impl<R: FromStr, T, X> ParseTo<R> for LocatedSpan<T, X>
 where
     T: ParseTo<R>,
 {
@@ -699,7 +700,7 @@ where
     }
 }
 
-impl<T, X> Offset for LocatedSpanEx<T, X> {
+impl<T, X> Offset for LocatedSpan<T, X> {
     fn offset(&self, second: &Self) -> usize {
         let fst = self.offset;
         let snd = second.offset;
@@ -709,7 +710,7 @@ impl<T, X> Offset for LocatedSpanEx<T, X> {
 }
 
 #[cfg(feature = "alloc")]
-impl<T: ToString, X> Display for LocatedSpanEx<T, X> {
+impl<T: ToString, X> Display for LocatedSpan<T, X> {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         fmt.write_str(&self.fragment.to_string())
     }
@@ -718,7 +719,7 @@ impl<T: ToString, X> Display for LocatedSpanEx<T, X> {
 /// Implement nom::ExtendInto for a specific fragment type.
 ///
 /// # Parameters
-/// * `$fragment_type` - The LocatedSpanEx's `fragment` type
+/// * `$fragment_type` - The LocatedSpan's `fragment` type
 /// * `$item` - The type of the item being iterated (a reference for fragments of type `&[T]`).
 /// * `$extender` - The type of the Extended.
 ///
@@ -736,7 +737,7 @@ impl<T: ToString, X> Display for LocatedSpanEx<T, X> {
 #[macro_export]
 macro_rules! impl_extend_into {
     ($fragment_type:ty, $item:ty, $extender:ty) => {
-        impl<'a, X> ExtendInto for LocatedSpanEx<$fragment_type, X> {
+        impl<'a, X> ExtendInto for LocatedSpan<$fragment_type, X> {
             type Item = $item;
             type Extender = $extender;
 
@@ -763,7 +764,7 @@ impl_extend_into!(&'a [u8], u8, Vec<u8>);
 macro_rules! impl_hex_display {
     ($fragment_type:ty) => {
         #[cfg(feature = "alloc")]
-        impl<'a, X> nom::HexDisplay for LocatedSpanEx<$fragment_type, X> {
+        impl<'a, X> nom::HexDisplay for LocatedSpan<$fragment_type, X> {
             fn to_hex(&self, chunk_size: usize) -> String {
                 self.fragment.to_hex(chunk_size)
             }

@@ -9,6 +9,7 @@ This release brings several breaking changes:
 * [Dependency on nom now uses with `default-features = false`](https://github.com/fflorent/nom_locate/pull/47)
 * [`offset`/`line`/`fragment` are now private attributes of the `LocatedSpan` structure](https://github.com/fflorent/nom_locate/pull/50),
   to fix an undefined behavior is they are modified. You now have to use the `location_offset()`, `location_line()`, and `fragment()` getters instead.
+* [`LocatedSpanEx` is removed in favour of adding a generic type parameter to `LocatedSpan` which defaults to to `()`](https://github.com/fflorent/nom_locate/pull/51)
 
 
 Additionally, there are a few documentation improvements:
