@@ -5,7 +5,7 @@
 This release brings several breaking changes:
 
 * [Error type for "position" is made generic](https://github.com/fflorent/nom_locate/pull/37)
-* [`extra` property is now ignored when comparing LocatedSpanEx](https://github.com/fflorent/nom_locate/pull/46)
+* [`extra` property is now ignored when comparing LocatedSpan](https://github.com/fflorent/nom_locate/pull/46)
 * [Dependency on nom now uses with `default-features = false`](https://github.com/fflorent/nom_locate/pull/47)
 * [`offset`/`line`/`fragment` are now private attributes of the `LocatedSpan` structure](https://github.com/fflorent/nom_locate/pull/50),
   to fix an undefined behavior is they are modified. You now have to use the `location_offset()`, `location_line()`, and `fragment()` getters instead.
@@ -14,8 +14,8 @@ This release brings several breaking changes:
 
 Additionally, there are a few documentation improvements:
 
-* LocatedSpanEx should not be constructed in the middle of a parser.
-* Fix typo in extra property docs for LocatedSpanEx
+* LocatedSpan should not be constructed in the middle of a parser.
+* Fix typo in extra property docs for LocatedSpan
 
 Finally, [`LocatedSpan` now implements `Display`](https://github.com/fflorent/nom_locate/pull/40)
 
