@@ -516,7 +516,7 @@ impl_input_iter!(
     Map<Iter<'a, Self::Item>, fn(&u8) -> u8>
 );
 
-impl<A: Compare<B>, B: Into<LocatedSpan<B>>, Y> Compare<B> for LocatedSpan<A, Y> {
+impl<A: Compare<B>, B: Into<LocatedSpan<B>>, X> Compare<B> for LocatedSpan<A, X> {
     #[inline(always)]
     fn compare(&self, t: B) -> CompareResult {
         self.fragment.compare(t.into().fragment)
@@ -527,19 +527,6 @@ impl<A: Compare<B>, B: Into<LocatedSpan<B>>, Y> Compare<B> for LocatedSpan<A, Y>
         self.fragment.compare_no_case(t.into().fragment)
     }
 }
-
-// TODO(future): replace impl_compare! with below default specialization?
-// default impl<A: Compare<B>, B, X> Compare<B> for LocatedSpan<A, X> {
-//     #[inline(always)]
-//     fn compare(&self, t: B) -> CompareResult {
-//         self.fragment.compare(t)
-//     }
-//
-//     #[inline(always)]
-//     fn compare_no_case(&self, t: B) -> CompareResult {
-//         self.fragment.compare_no_case(t)
-//     }
-// }
 
 /// Implement nom::Slice for a specific fragment type and range type.
 ///
