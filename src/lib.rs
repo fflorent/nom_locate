@@ -108,9 +108,10 @@ use lib::std::*;
 use bytecount::{naive_num_chars, num_chars};
 use memchr::Memchr;
 #[cfg(feature = "alloc")]
+use nom::ExtendInto;
 use nom::{
     error::{ErrorKind, ParseError},
-    AsBytes, Compare, CompareResult, Err, ExtendInto, FindSubstring, FindToken, IResult, InputIter,
+    AsBytes, Compare, CompareResult, Err, FindSubstring, FindToken, IResult, InputIter,
     InputLength, InputTake, InputTakeAtPosition, Offset, ParseTo, Slice,
 };
 
