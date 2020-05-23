@@ -535,6 +535,12 @@ impl<A: Compare<B>, B: Into<LocatedSpan<B>>, X> Compare<B> for LocatedSpan<A, X>
     }
 }
 
+#[macro_export]
+#[deprecated]
+macro_rules! impl_compare {
+    ( $fragment_type:ty, $compare_to_type:ty ) => {};
+}
+
 /// Implement nom::Slice for a specific fragment type and range type.
 ///
 /// **You'd probably better use impl_`slice_ranges`**,
@@ -714,6 +720,13 @@ macro_rules! impl_extend_into {
             }
         }
     };
+}
+
+#[cfg(feature = "std")]
+#[macro_export]
+#[deprecated]
+macro_rules! impl_hex_display {
+    ($fragment_type:ty) => {};
 }
 
 #[cfg(feature = "alloc")]
