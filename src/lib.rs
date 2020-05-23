@@ -139,6 +139,13 @@ pub struct LocatedSpan<T, X = ()> {
     pub extra: X,
 }
 
+impl<T, X> std::ops::Deref for LocatedSpan<T, X> {
+    type Target = T;
+    fn deref(&self) -> &Self::Target {
+        &self.fragment
+    }
+}
+
 impl<T: AsBytes> LocatedSpan<T, ()> {
     /// Create a span for a particular input with default `offset` and
     /// `line` values and empty extra data.
@@ -714,30 +721,7 @@ impl_extend_into!(&'a str, char, String);
 #[cfg(feature = "alloc")]
 impl_extend_into!(&'a [u8], u8, Vec<u8>);
 
-#[cfg(feature = "std")]
-#[macro_export]
-macro_rules! impl_hex_display {
-    ($fragment_type:ty) => {
-        #[cfg(feature = "alloc")]
-        impl<'a, X> nom::HexDisplay for LocatedSpan<$fragment_type, X> {
-            fn to_hex(&self, chunk_size: usize) -> String {
-                self.fragment.to_hex(chunk_size)
-            }
-
-            fn to_hex_from(&self, chunk_size: usize, from: usize) -> String {
-                self.fragment.to_hex_from(chunk_size, from)
-            }
-        }
-    };
-}
-
-#[cfg(feature = "std")]
-impl_hex_display!(&'a str);
-#[cfg(feature = "std")]
-impl_hex_display!(&'a [u8]);
-
 /// Capture the position of the current fragment
-
 #[macro_export]
 macro_rules! position {
     ($input:expr,) => {
