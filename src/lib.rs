@@ -722,17 +722,17 @@ macro_rules! impl_extend_into {
     };
 }
 
+#[cfg(feature = "alloc")]
+impl_extend_into!(&'a str, char, String);
+#[cfg(feature = "alloc")]
+impl_extend_into!(&'a [u8], u8, Vec<u8>);
+
 #[cfg(feature = "std")]
 #[macro_export]
 #[deprecated(since = "2.0.1", note = "this implementation has been generalized and no longer requires a macro")]
 macro_rules! impl_hex_display {
     ($fragment_type:ty) => {};
 }
-
-#[cfg(feature = "alloc")]
-impl_extend_into!(&'a str, char, String);
-#[cfg(feature = "alloc")]
-impl_extend_into!(&'a [u8], u8, Vec<u8>);
 
 /// Capture the position of the current fragment
 #[macro_export]
