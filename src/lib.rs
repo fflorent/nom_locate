@@ -516,53 +516,15 @@ impl_input_iter!(
     Map<Iter<'a, Self::Item>, fn(&u8) -> u8>
 );
 
-/// Implement nom::Compare for a specific fragment type.
-///
-/// # Parameters
-/// * `$fragment_type` - The LocatedSpan's `fragment` type
-/// * `$compare_to_type` - The type to be comparable to `LocatedSpan<$fragment_type, X>`
-///
-/// # Example of use
-///
-/// NB: This example is an extract from the nom_locate source code.
-///
-/// ````ignore
-/// #[macro_use]
-/// extern crate nom_locate;
-/// impl_compare!(&'b str, &'a str);
-/// impl_compare!(&'b [u8], &'a [u8]);
-/// impl_compare!(&'b [u8], &'a str);
-/// ````
-#[macro_export]
-macro_rules! impl_compare {
-    ( $fragment_type:ty, $compare_to_type:ty ) => {
-        impl<'a, 'b, X> Compare<$compare_to_type> for LocatedSpan<$fragment_type, X> {
-            #[inline(always)]
-            fn compare(&self, t: $compare_to_type) -> CompareResult {
-                self.fragment.compare(t)
-            }
-
-            #[inline(always)]
-            fn compare_no_case(&self, t: $compare_to_type) -> CompareResult {
-                self.fragment.compare_no_case(t)
-            }
-        }
-    };
-}
-
-impl_compare!(&'b str, &'a str);
-impl_compare!(&'b [u8], &'a [u8]);
-impl_compare!(&'b [u8], &'a str);
-
-impl<A: Compare<B>, B, X, Y> Compare<LocatedSpan<B, X>> for LocatedSpan<A, Y> {
+impl<A: Compare<B>, B: Into<LocatedSpan<B>>, Y> Compare<B> for LocatedSpan<A, Y> {
     #[inline(always)]
-    fn compare(&self, t: LocatedSpan<B, X>) -> CompareResult {
-        self.fragment.compare(t.fragment)
+    fn compare(&self, t: B) -> CompareResult {
+        self.fragment.compare(t.into().fragment)
     }
 
     #[inline(always)]
-    fn compare_no_case(&self, t: LocatedSpan<B, X>) -> CompareResult {
-        self.fragment.compare_no_case(t.fragment)
+    fn compare_no_case(&self, t: B) -> CompareResult {
+        self.fragment.compare_no_case(t.into().fragment)
     }
 }
 
