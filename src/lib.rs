@@ -349,6 +349,12 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     }
 }
 
+impl<T: AsBytes, X: Default> From<T> for LocatedSpan<T, X> {
+    fn from(i: T) -> Self {
+        Self::new_extra(i, X::default())
+    }
+}
+
 impl<T: AsBytes + PartialEq, X> PartialEq for LocatedSpan<T, X> {
     fn eq(&self, other: &Self) -> bool {
         self.line == other.line && self.offset == other.offset && self.fragment == other.fragment

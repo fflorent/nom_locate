@@ -52,6 +52,13 @@ fn it_should_call_new_for_u8_successfully() {
 }
 
 #[test]
+fn it_should_convert_from_u8_successfully() {
+    let input = &b"foobar"[..];
+    assert_eq!(BytesSpan::new(input), input.into());
+    assert_eq!(BytesSpanEx::new_extra(input, "extra"), input.into());
+}
+
+#[test]
 fn it_should_call_new_for_str_successfully() {
     let input = &"foobar"[..];
     let output = StrSpan {
@@ -62,6 +69,13 @@ fn it_should_call_new_for_str_successfully() {
     };
 
     assert_eq!(StrSpan::new(input), output);
+}
+
+#[test]
+fn it_should_convert_from_str_successfully() {
+    let input = &"foobar"[..];
+    assert_eq!(StrSpan::new(input), input.into());
+    assert_eq!(StrSpanEx::new_extra(input, "extra"), input.into());
 }
 
 #[test]
