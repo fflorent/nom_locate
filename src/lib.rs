@@ -139,7 +139,7 @@ pub struct LocatedSpan<T, X = ()> {
     pub extra: X,
 }
 
-impl<T, X> std::ops::Deref for LocatedSpan<T, X> {
+impl<T, X> core::ops::Deref for LocatedSpan<T, X> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         &self.fragment
