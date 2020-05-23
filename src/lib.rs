@@ -108,10 +108,9 @@ use lib::std::*;
 use bytecount::{naive_num_chars, num_chars};
 use memchr::Memchr;
 #[cfg(feature = "alloc")]
-use nom::ExtendInto;
 use nom::{
     error::{ErrorKind, ParseError},
-    AsBytes, Compare, CompareResult, Err, FindSubstring, FindToken, IResult, InputIter,
+    AsBytes, Compare, CompareResult, Err, ExtendInto, FindSubstring, FindToken, IResult, InputIter,
     InputLength, InputTake, InputTakeAtPosition, Offset, ParseTo, Slice,
 };
 
@@ -536,7 +535,7 @@ impl<A: Compare<B>, B: Into<LocatedSpan<B>>, X> Compare<B> for LocatedSpan<A, X>
 }
 
 #[macro_export]
-#[deprecated]
+#[deprecated(since = "2.0.1", note = "this implementation has been generalized and no longer needs a macro")]
 macro_rules! impl_compare {
     ( $fragment_type:ty, $compare_to_type:ty ) => {};
 }
@@ -724,7 +723,7 @@ macro_rules! impl_extend_into {
 
 #[cfg(feature = "std")]
 #[macro_export]
-#[deprecated]
+#[deprecated(since = "2.0.1", note = "this implementation has been generalized and no longer needs a macro")]
 macro_rules! impl_hex_display {
     ($fragment_type:ty) => {};
 }
