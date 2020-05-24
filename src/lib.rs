@@ -139,6 +139,13 @@ pub struct LocatedSpan<T, X = ()> {
     pub extra: X,
 }
 
+impl<T, X> core::ops::Deref for LocatedSpan<T, X> {
+    type Target = T;
+    fn deref(&self) -> &Self::Target {
+        &self.fragment
+    }
+}
+
 impl<T: AsBytes> LocatedSpan<T, ()> {
     /// Create a span for a particular input with default `offset` and
     /// `line` values and empty extra data.
@@ -516,68 +523,26 @@ impl_input_iter!(
     Map<Iter<'a, Self::Item>, fn(&u8) -> u8>
 );
 
-/// Implement nom::Compare for a specific fragment type.
-///
-/// # Parameters
-/// * `$fragment_type` - The LocatedSpan's `fragment` type
-/// * `$compare_to_type` - The type to be comparable to `LocatedSpan<$fragment_type, X>`
-///
-/// # Example of use
-///
-/// NB: This example is an extract from the nom_locate source code.
-///
-/// ````ignore
-/// #[macro_use]
-/// extern crate nom_locate;
-/// impl_compare!(&'b str, &'a str);
-/// impl_compare!(&'b [u8], &'a [u8]);
-/// impl_compare!(&'b [u8], &'a str);
-/// ````
+impl<A: Compare<B>, B: Into<LocatedSpan<B>>, X> Compare<B> for LocatedSpan<A, X> {
+    #[inline(always)]
+    fn compare(&self, t: B) -> CompareResult {
+        self.fragment.compare(t.into().fragment)
+    }
+
+    #[inline(always)]
+    fn compare_no_case(&self, t: B) -> CompareResult {
+        self.fragment.compare_no_case(t.into().fragment)
+    }
+}
+
 #[macro_export]
+#[deprecated(
+    since = "2.1.0",
+    note = "this implementation has been generalized and no longer requires a macro"
+)]
 macro_rules! impl_compare {
-    ( $fragment_type:ty, $compare_to_type:ty ) => {
-        impl<'a, 'b, X> Compare<$compare_to_type> for LocatedSpan<$fragment_type, X> {
-            #[inline(always)]
-            fn compare(&self, t: $compare_to_type) -> CompareResult {
-                self.fragment.compare(t)
-            }
-
-            #[inline(always)]
-            fn compare_no_case(&self, t: $compare_to_type) -> CompareResult {
-                self.fragment.compare_no_case(t)
-            }
-        }
-    };
+    ( $fragment_type:ty, $compare_to_type:ty ) => {};
 }
-
-impl_compare!(&'b str, &'a str);
-impl_compare!(&'b [u8], &'a [u8]);
-impl_compare!(&'b [u8], &'a str);
-
-impl<A: Compare<B>, B, X, Y> Compare<LocatedSpan<B, X>> for LocatedSpan<A, Y> {
-    #[inline(always)]
-    fn compare(&self, t: LocatedSpan<B, X>) -> CompareResult {
-        self.fragment.compare(t.fragment)
-    }
-
-    #[inline(always)]
-    fn compare_no_case(&self, t: LocatedSpan<B, X>) -> CompareResult {
-        self.fragment.compare_no_case(t.fragment)
-    }
-}
-
-// TODO(future): replace impl_compare! with below default specialization?
-// default impl<A: Compare<B>, B, X> Compare<B> for LocatedSpan<A, X> {
-//     #[inline(always)]
-//     fn compare(&self, t: B) -> CompareResult {
-//         self.fragment.compare(t)
-//     }
-//
-//     #[inline(always)]
-//     fn compare_no_case(&self, t: B) -> CompareResult {
-//         self.fragment.compare_no_case(t)
-//     }
-// }
 
 /// Implement nom::Slice for a specific fragment type and range type.
 ///
@@ -767,28 +732,15 @@ impl_extend_into!(&'a [u8], u8, Vec<u8>);
 
 #[cfg(feature = "std")]
 #[macro_export]
+#[deprecated(
+    since = "2.1.0",
+    note = "this implementation has been generalized and no longer requires a macro"
+)]
 macro_rules! impl_hex_display {
-    ($fragment_type:ty) => {
-        #[cfg(feature = "alloc")]
-        impl<'a, X> nom::HexDisplay for LocatedSpan<$fragment_type, X> {
-            fn to_hex(&self, chunk_size: usize) -> String {
-                self.fragment.to_hex(chunk_size)
-            }
-
-            fn to_hex_from(&self, chunk_size: usize, from: usize) -> String {
-                self.fragment.to_hex_from(chunk_size, from)
-            }
-        }
-    };
+    ($fragment_type:ty) => {};
 }
 
-#[cfg(feature = "std")]
-impl_hex_display!(&'a str);
-#[cfg(feature = "std")]
-impl_hex_display!(&'a [u8]);
-
 /// Capture the position of the current fragment
-
 #[macro_export]
 macro_rules! position {
     ($input:expr,) => {

@@ -392,3 +392,25 @@ fn it_should_capture_position() {
     assert_eq!(s.line, 2);
     assert_eq!(t, "def");
 }
+
+#[test]
+fn it_should_deref_to_fragment() {
+    let input = &"foobar"[..];
+    assert_eq!(*StrSpanEx::new_extra(input, "extra"), input);
+    let input = &b"foobar"[..];
+    assert_eq!(*BytesSpanEx::new_extra(input, "extra"), input);
+}
+
+#[cfg(feature = "std")]
+#[test]
+fn it_should_display_hex() {
+    use nom::HexDisplay;
+    assert_eq!(
+        StrSpan::new(&"abc"[..]).to_hex(4),
+        "00000000\t61 62 63    \tabc\n".to_owned()
+    );
+    assert_eq!(
+        BytesSpanEx::new_extra(&b"abc"[..], "extra").to_hex(4),
+        "00000000\t61 62 63    \tabc\n".to_owned()
+    );
+}
