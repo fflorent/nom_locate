@@ -536,7 +536,10 @@ impl<A: Compare<B>, B: Into<LocatedSpan<B>>, X> Compare<B> for LocatedSpan<A, X>
 }
 
 #[macro_export]
-#[deprecated(since = "2.0.1", note = "this implementation has been generalized and no longer requires a macro")]
+#[deprecated(
+    since = "2.1.0",
+    note = "this implementation has been generalized and no longer requires a macro"
+)]
 macro_rules! impl_compare {
     ( $fragment_type:ty, $compare_to_type:ty ) => {};
 }
@@ -729,7 +732,10 @@ impl_extend_into!(&'a [u8], u8, Vec<u8>);
 
 #[cfg(feature = "std")]
 #[macro_export]
-#[deprecated(since = "2.0.1", note = "this implementation has been generalized and no longer requires a macro")]
+#[deprecated(
+    since = "2.1.0",
+    note = "this implementation has been generalized and no longer requires a macro"
+)]
 macro_rules! impl_hex_display {
     ($fragment_type:ty) => {};
 }
