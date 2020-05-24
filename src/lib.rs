@@ -687,48 +687,43 @@ impl<T: ToString, X> Display for LocatedSpan<T, X> {
     }
 }
 
-/// Implement nom::ExtendInto for a specific fragment type.
-///
-/// # Parameters
-/// * `$fragment_type` - The LocatedSpan's `fragment` type
-/// * `$item` - The type of the item being iterated (a reference for fragments of type `&[T]`).
-/// * `$extender` - The type of the Extended.
-///
-/// # Example of use
-///
-/// NB: This example is an extract from the nom_locate source code.
-///
-/// ````ignore
-/// #[macro_use]
-/// extern crate nom_locate;
-///
-/// impl_extend_into!(&'a str, char, String);
-/// impl_extend_into!(&'a [u8], u8, Vec<u8>);
-/// ````
 #[macro_export]
+#[deprecated(
+    since = "2.1.0",
+    note = "this implementation has been generalized and no longer requires a macro"
+)]
 macro_rules! impl_extend_into {
-    ($fragment_type:ty, $item:ty, $extender:ty) => {
-        impl<'a, X> ExtendInto for LocatedSpan<$fragment_type, X> {
-            type Item = $item;
-            type Extender = $extender;
+    ($fragment_type:ty, $item:ty, $extender:ty) => {};
+}
 
-            #[inline]
-            fn new_builder(&self) -> Self::Extender {
-                self.fragment.new_builder()
-            }
-
-            #[inline]
-            fn extend_into(&self, acc: &mut Self::Extender) {
-                self.fragment.extend_into(acc)
-            }
-        }
-    };
+impl<'a> IntoIterator for LocatedSpan<&'a str> {
+    type Item = char;
+    type IntoIter = Chars<'a>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.fragment.chars()
+    }
 }
 
 #[cfg(feature = "alloc")]
-impl_extend_into!(&'a str, char, String);
-#[cfg(feature = "alloc")]
-impl_extend_into!(&'a [u8], u8, Vec<u8>);
+impl<'a, I, E, T, X> ExtendInto for LocatedSpan<T, X>
+where
+    E: Default + Extend<I>,
+    T: ExtendInto<Item = I, Extender = E>,
+    Self: Clone + IntoIterator<Item = I>,
+{
+    type Item = I;
+    type Extender = E;
+
+    #[inline]
+    fn new_builder(&self) -> Self::Extender {
+        Self::Extender::default()
+    }
+
+    #[inline]
+    fn extend_into(&self, acc: &mut Self::Extender) {
+        acc.extend(self.clone().into_iter())
+    }
+}
 
 #[cfg(feature = "std")]
 #[macro_export]
