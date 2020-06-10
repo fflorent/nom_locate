@@ -421,7 +421,7 @@ where
     {
         match self.fragment.position(predicate) {
             Some(n) => Ok(self.take_split(n)),
-            None => Err(Err::Incomplete(nom::Needed::Size(1))),
+            None => Err(Err::Incomplete(nom::Needed::new(1usize))),
         }
     }
 
@@ -436,7 +436,7 @@ where
         match self.fragment.position(predicate) {
             Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
             Some(n) => Ok(self.take_split(n)),
-            None => Err(Err::Incomplete(nom::Needed::Size(1))),
+            None => Err(Err::Incomplete(nom::Needed::new(1usize))),
         }
     }
 
