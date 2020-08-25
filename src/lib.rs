@@ -11,34 +11,34 @@
 //! The explanations are given in the [README](https://github.com/fflorent/nom_locate/blob/master/README.md) of the Github repository. You may also consult the [FAQ](https://github.com/fflorent/nom_locate/blob/master/FAQ.md).
 //!
 //! ```
-//! #[macro_use]
-//! extern crate nom;
-//! #[macro_use]
-//! extern crate nom_locate;
+//! use nom::bytes::complete::{tag, take_until};
+//! use nom::IResult;
+//! use nom_locate::{position, LocatedSpan};
 //!
-//! use nom_locate::LocatedSpan;
 //! type Span<'a> = LocatedSpan<&'a str>;
 //!
 //! struct Token<'a> {
 //!     pub position: Span<'a>,
-//!     pub foo: String,
-//!     pub bar: String,
+//!     pub foo: &'a str,
+//!     pub bar: &'a str,
 //! }
 //!
-//! # #[cfg(feature = "alloc")]
-//! named!(parse_foobar( Span ) -> Token, do_parse!(
-//!     take_until!("foo") >>
-//!     position: position!() >>
-//!     foo: tag!("foo") >>
-//!     bar: tag!("bar") >>
-//!     (Token {
-//!         position: position,
-//!         foo: foo.to_string(),
-//!         bar: bar.to_string()
-//!     })
-//! ));
+//! fn parse_foobar(s: Span) -> IResult<Span, Token> {
+//!     let (s, _) = take_until("foo")(s)?;
+//!     let (s, pos) = position(s)?;
+//!     let (s, foo) = tag("foo")(s)?;
+//!     let (s, bar) = tag("bar")(s)?;
 //!
-//! # #[cfg(feature = "alloc")]
+//!     Ok((
+//!         s,
+//!         Token {
+//!             position: pos,
+//!             foo: foo.fragment(),
+//!             bar: bar.fragment(),
+//!         },
+//!     ))
+//! }
+//!
 //! fn main () {
 //!     let input = Span::new("Lorem ipsum \n foobar");
 //!     let output = parse_foobar(input);
@@ -48,8 +48,6 @@
 //!     assert_eq!(position.fragment(), &"");
 //!     assert_eq!(position.get_column(), 2);
 //! }
-//! # #[cfg(not(feature = "alloc"))]
-//! # fn main() {}
 //! ```
 //!
 //! ## Extra information
