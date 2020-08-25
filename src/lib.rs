@@ -53,17 +53,18 @@
 //! ```
 //!
 //! ## Extra information
+//!
 //! You can also add arbitrary extra information using the extra property of `LocatedSpan`.
 //! This property is not used when comparing two `LocatedSpan`s.
 //!
-//! ``̀`
+//! ```
 //! use nom_locate::LocatedSpan;
 //! type Span<'a> = LocatedSpan<&'a str, String>;
 //!
 //! let input = Span::new("Lorem ipsum \n foobar", "filename");
 //! let output = parse_foobar(input);
 //! let extra = output.unwrap().1.extra;
-//! ``̀`
+//! ```
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
