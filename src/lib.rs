@@ -55,7 +55,7 @@
 //! You can also add arbitrary extra information using the extra property of `LocatedSpan`.
 //! This property is not used when comparing two `LocatedSpan`s.
 //!
-//! ```
+//! ```ignore
 //! use nom_locate::LocatedSpan;
 //! type Span<'a> = LocatedSpan<&'a str, String>;
 //!
