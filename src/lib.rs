@@ -114,6 +114,8 @@ use nom::{
     AsBytes, Compare, CompareResult, Err, FindSubstring, FindToken, IResult, InputIter,
     InputLength, InputTake, InputTakeAtPosition, Offset, ParseTo, Slice,
 };
+#[cfg(feature = "stable-deref-trait")]
+use stable_deref_trait::StableDeref;
 
 /// A LocatedSpan is a set of meta information about the location of a token, including extra
 /// information.
@@ -145,6 +147,14 @@ impl<T, X> core::ops::Deref for LocatedSpan<T, X> {
         &self.fragment
     }
 }
+
+#[cfg(feature = "stable-deref-trait")]
+/// Optionally impl StableDeref so that this type works harmoniously with other
+/// crates that rely on this marker trait, such as `rental` and `lazy_static`.
+/// LocatedSpan is largely just a wrapper around the contained type `T`, so
+/// this marker trait is safe to implement whenever T already implements
+/// StableDeref.
+unsafe impl<T: StableDeref, X> StableDeref for LocatedSpan<T, X> {}
 
 impl<T: AsBytes> LocatedSpan<T, ()> {
     /// Create a span for a particular input with default `offset` and
