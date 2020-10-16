@@ -489,7 +489,6 @@ fn line_of_end_no_nl_is_last() {
 
 #[test]
 fn line_for_non_ascii_chars() {
-    // I don't really know if this Oriya text makes sense.
     let data = StrSpan::new(
         "Några rader text på Svenska.\
          \nFörra raden var först, den här är i mitten\
