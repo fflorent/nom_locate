@@ -297,11 +297,11 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     ///
     /// assert_eq!(
     ///     program.slice(multi..).get_line(),
-    ///     Some("This is a multi-line input".as_ref()),
+    ///     "This is a multi-line input".as_bytes(),
     /// );
     /// # }
     /// ```
-    pub fn get_line(&self) -> Option<&[u8]> {
+    pub fn get_line(&self) -> &[u8] {
         let self_bytes = self.fragment.as_bytes();
         let self_ptr = self_bytes.as_ptr();
         let offset = self.get_column() - 1;
@@ -313,7 +313,10 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
             let line_start_ptr = self_ptr.offset(-(offset as isize));
             slice::from_raw_parts(line_start_ptr, offset + self_bytes.len())
         };
-        the_line.split(|c| *c == b'\n').next()
+        match memchr::memchr(b'\n', the_line) {
+            None => the_line,
+            Some(pos) => &the_line[..pos],
+        }
     }
 
     /// Return the column index, assuming 1 byte = 1 column.

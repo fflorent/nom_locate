@@ -419,7 +419,7 @@ fn it_should_display_hex() {
 fn line_of_empty_span_is_empty() {
     assert_eq!(
         StrSpan::new("").get_line(),
-        Some("".as_ref()),
+        "".as_bytes(),
     );
 }
 
@@ -427,7 +427,7 @@ fn line_of_empty_span_is_empty() {
 fn line_of_single_line_start_is_whole() {
     assert_eq!(
         StrSpan::new("A single line").get_line(),
-        Some("A single line".as_ref()),
+        "A single line".as_bytes(),
     );
 }
 #[test]
@@ -435,7 +435,7 @@ fn line_of_single_line_end_is_whole() {
     let data = "A single line";
     assert_eq!(
         StrSpan::new(data).slice(data.len()..).get_line(),
-        Some("A single line".as_ref()),
+        "A single line".as_bytes(),
     );
 }
 
@@ -447,7 +447,7 @@ fn line_of_start_is_first() {
              \nFollowed by a second\
              \nand a third\n"
         ).get_line(),
-        Some("One line of text".as_ref()),
+        "One line of text".as_bytes(),
     );
 }
 
@@ -459,7 +459,7 @@ fn line_of_nl_is_before() {
          \nand a third\n";
     assert_eq!(
         StrSpan::new(data).slice(data.find('\n').unwrap()..).get_line(),
-        Some("One line of text".as_ref()),
+        "One line of text".as_bytes(),
     );
 }
 
@@ -471,7 +471,7 @@ fn line_of_end_after_nl_is_empty() {
          \nand a third\n";
     assert_eq!(
         StrSpan::new(data).slice(data.len()..).get_line(),
-        Some("".as_ref()),
+        "".as_bytes(),
     );
 }
 
@@ -483,7 +483,7 @@ fn line_of_end_no_nl_is_last() {
          \nand a third";
     assert_eq!(
         StrSpan::new(data).slice(data.len()..).get_line(),
-        Some("and a third".as_ref()),
+        "and a third".as_bytes(),
     );
 }
 
@@ -499,7 +499,7 @@ fn line_for_non_ascii_chars() {
             "{line_no:3}: {line_text}\n    {0:>lpos$}^- The match\n",
             "",
             line_no = s.location_line(),
-            line_text = core::str::from_utf8(s.get_line().unwrap()).unwrap(),
+            line_text = core::str::from_utf8(s.get_line()).unwrap(),
             lpos = s.get_utf8_column(),
         ),
         "  2: Förra raden var först, den här är i mitten\
