@@ -277,6 +277,45 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
         (column, &before_self[self.offset - (column - 1)..])
     }
 
+    /// Return the line that contains this LocatedSpan.
+    ///
+    /// The `get_column` and `get_utf8_column` functions returns
+    /// indexes that corresponds to the line returned by this function.
+    ///
+    /// ```
+    /// # extern crate nom_locate;
+    /// # extern crate nom;
+    /// # use nom_locate::LocatedSpan;
+    /// # use nom::{Slice, FindSubstring};
+    /// #
+    /// # fn main() {
+    /// let program = LocatedSpan::new(
+    ///     "Hello World!\
+    ///     \nThis is a multi-line input\
+    ///     \nthat ends after this line.\n");
+    /// let multi = program.find_substring("multi").unwrap();
+    ///
+    /// assert_eq!(
+    ///     program.slice(multi..).get_line(),
+    ///     Some("This is a multi-line input".as_ref()),
+    /// );
+    /// # }
+    /// ```
+    pub fn get_line(&self) -> Option<&[u8]> {
+        let self_bytes = self.fragment.as_bytes();
+        let self_ptr = self_bytes.as_ptr();
+        let offset = self.get_column() - 1;
+        let the_line = unsafe {
+            assert!(
+                offset <= isize::max_value() as usize,
+                "offset is too big"
+            );
+            let line_start_ptr = self_ptr.offset(-(offset as isize));
+            slice::from_raw_parts(line_start_ptr, offset + self_bytes.len())
+        };
+        the_line.split(|c| *c == b'\n').next()
+    }
+
     /// Return the column index, assuming 1 byte = 1 column.
     ///
     /// Use it for ascii text, or use get_utf8_column for UTF8.
