@@ -417,10 +417,7 @@ fn it_should_display_hex() {
 
 #[test]
 fn line_of_empty_span_is_empty() {
-    assert_eq!(
-        StrSpan::new("").get_line(),
-        "".as_bytes(),
-    );
+    assert_eq!(StrSpan::new("").get_line(), "".as_bytes());
 }
 
 #[test]
@@ -446,27 +443,28 @@ fn line_of_start_is_first() {
             "One line of text\
              \nFollowed by a second\
              \nand a third\n"
-        ).get_line(),
+        )
+        .get_line(),
         "One line of text".as_bytes(),
     );
 }
 
 #[test]
 fn line_of_nl_is_before() {
-    let data =
-        "One line of text\
+    let data = "One line of text\
          \nFollowed by a second\
          \nand a third\n";
     assert_eq!(
-        StrSpan::new(data).slice(data.find('\n').unwrap()..).get_line(),
+        StrSpan::new(data)
+            .slice(data.find('\n').unwrap()..)
+            .get_line(),
         "One line of text".as_bytes(),
     );
 }
 
 #[test]
 fn line_of_end_after_nl_is_empty() {
-    let data =
-        "One line of text\
+    let data = "One line of text\
          \nFollowed by a second\
          \nand a third\n";
     assert_eq!(
@@ -477,8 +475,7 @@ fn line_of_end_after_nl_is_empty() {
 
 #[test]
 fn line_of_end_no_nl_is_last() {
-    let data =
-        "One line of text\
+    let data = "One line of text\
          \nFollowed by a second\
          \nand a third";
     assert_eq!(
@@ -493,7 +490,8 @@ fn line_for_non_ascii_chars() {
     let data = StrSpan::new(
         "Några rader text på Svenska.\
          \nFörra raden var först, den här är i mitten\
-         \noch här är sista raden.\n");
+         \noch här är sista raden.\n",
+    );
     let s = data.slice(data.find_substring("först").unwrap()..);
     assert_eq!(
         format!(
