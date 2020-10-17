@@ -487,6 +487,7 @@ fn line_of_end_no_nl_is_last() {
     );
 }
 
+#[cfg(feature = "std")]
 #[test]
 fn line_for_non_ascii_chars() {
     let data = StrSpan::new(
