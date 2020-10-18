@@ -294,8 +294,8 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     /// indexes that corresponds to the line returned by this function.
     ///
     /// Note that if this LocatedSpan ends before the end of the
-    /// original data, the result of calling `get_line()` will not
-    /// include any data from after the LocatedSpan.
+    /// original data, the result of calling `get_line_beginning()`
+    /// will not include any data from after the LocatedSpan.
     ///
     /// ```
     /// # extern crate nom_locate;
@@ -311,12 +311,12 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     /// let multi = program.find_substring("multi").unwrap();
     ///
     /// assert_eq!(
-    ///     program.slice(multi..).get_line(),
+    ///     program.slice(multi..).get_line_beginning(),
     ///     "This is a multi-line input".as_bytes(),
     /// );
     /// # }
     /// ```
-    pub fn get_line(&self) -> &[u8] {
+    pub fn get_line_beginning(&self) -> &[u8] {
         let column0 = self.get_column() - 1;
         let the_line = &self.get_unoffsetted_slice()[self.offset - column0..];
         match memchr::memchr(b'\n', &the_line[column0..]) {
