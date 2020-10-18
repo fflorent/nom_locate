@@ -484,6 +484,21 @@ fn line_of_end_no_nl_is_last() {
     );
 }
 
+/// This test documents how `get_line_beginning()` differs from
+/// a hypotetical `get_line()` method.
+#[test]
+fn line_begining_may_ot_be_entire_len() {
+    let data = "One line of text\
+         \nFollowed by a second\
+         \nand a third";
+    let by = "by";
+    let pos = data.find_substring(by).unwrap();
+    assert_eq!(
+        StrSpan::new(data).slice(pos..pos+by.len()).get_line_beginning(),
+        "Followed by".as_bytes(),
+    );
+}
+
 #[cfg(feature = "std")]
 #[test]
 fn line_for_non_ascii_chars() {
