@@ -267,17 +267,28 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
         &self.fragment
     }
 
-    fn get_columns_and_bytes_before(&self) -> (usize, &[u8]) {
+    // Attempt to get the "original" data slice back, by extending
+    // self.fragment backwards by self.offset.
+    // Note that any bytes truncated from after self.fragment will not
+    // be recovered.
+    fn get_unoffsetted_slice(&self) -> &[u8] {
         let self_bytes = self.fragment.as_bytes();
         let self_ptr = self_bytes.as_ptr();
-        let before_self = unsafe {
+        unsafe {
             assert!(
                 self.offset <= isize::max_value() as usize,
                 "offset is too big"
             );
             let orig_input_ptr = self_ptr.offset(-(self.offset as isize));
-            slice::from_raw_parts(orig_input_ptr, self.offset)
-        };
+            slice::from_raw_parts(
+                orig_input_ptr,
+                self.offset + self_bytes.len(),
+            )
+        }
+    }
+
+    fn get_columns_and_bytes_before(&self) -> (usize, &[u8]) {
+        let before_self = &self.get_unoffsetted_slice()[..self.offset];
 
         let column = match memchr::memrchr(b'\n', before_self) {
             None => self.offset + 1,
@@ -285,6 +296,43 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
         };
 
         (column, &before_self[self.offset - (column - 1)..])
+    }
+
+    /// Return the line that contains this LocatedSpan.
+    ///
+    /// The `get_column` and `get_utf8_column` functions returns
+    /// indexes that corresponds to the line returned by this function.
+    ///
+    /// Note that if this LocatedSpan ends before the end of the
+    /// original data, the result of calling `get_line_beginning()`
+    /// will not include any data from after the LocatedSpan.
+    ///
+    /// ```
+    /// # extern crate nom_locate;
+    /// # extern crate nom;
+    /// # use nom_locate::LocatedSpan;
+    /// # use nom::{Slice, FindSubstring};
+    /// #
+    /// # fn main() {
+    /// let program = LocatedSpan::new(
+    ///     "Hello World!\
+    ///     \nThis is a multi-line input\
+    ///     \nthat ends after this line.\n");
+    /// let multi = program.find_substring("multi").unwrap();
+    ///
+    /// assert_eq!(
+    ///     program.slice(multi..).get_line_beginning(),
+    ///     "This is a multi-line input".as_bytes(),
+    /// );
+    /// # }
+    /// ```
+    pub fn get_line_beginning(&self) -> &[u8] {
+        let column0 = self.get_column() - 1;
+        let the_line = &self.get_unoffsetted_slice()[self.offset - column0..];
+        match memchr::memchr(b'\n', &the_line[column0..]) {
+            None => the_line,
+            Some(pos) => &the_line[..column0 + pos],
+        }
     }
 
     /// Return the column index, assuming 1 byte = 1 column.
