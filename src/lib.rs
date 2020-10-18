@@ -257,6 +257,10 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
         &self.fragment
     }
 
+    // Attempt to get the "original" data slice back, by extending
+    // self.fragment backwards by self.offset.
+    // Note that any bytes truncated from after self.fragment will not
+    // be recovered.
     fn get_unoffsetted_slice(&self) -> &[u8] {
         let self_bytes = self.fragment.as_bytes();
         let self_ptr = self_bytes.as_ptr();
@@ -288,6 +292,10 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     ///
     /// The `get_column` and `get_utf8_column` functions returns
     /// indexes that corresponds to the line returned by this function.
+    ///
+    /// Note that if this LocatedSpan ends before the end of the
+    /// original data, the result of calling `get_line()` will not
+    /// include any data from after the LocatedSpan.
     ///
     /// ```
     /// # extern crate nom_locate;
