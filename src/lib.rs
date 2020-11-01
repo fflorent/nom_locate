@@ -78,7 +78,7 @@ mod lib {
     #[cfg(feature = "std")]
     pub mod std {
         pub use std::fmt::{Display, Formatter, Result as FmtResult};
-        pub use std::iter::{Enumerate, Map};
+        pub use std::iter::{Copied, Enumerate};
         pub use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
         pub use std::slice;
         pub use std::slice::Iter;
@@ -95,7 +95,7 @@ mod lib {
         pub use alloc::string::{String, ToString};
         #[cfg(feature = "alloc")]
         pub use alloc::vec::Vec;
-        pub use core::iter::{Enumerate, Map};
+        pub use core::iter::{Copied, Enumerate};
         pub use core::ops::{Range, RangeFrom, RangeFull, RangeTo};
         pub use core::slice;
         pub use core::slice::Iter;
@@ -479,7 +479,7 @@ where
     {
         match self.fragment.position(predicate) {
             Some(n) => Ok(self.take_split(n)),
-            None => Err(Err::Incomplete(nom::Needed::Size(1))),
+            None => Err(Err::Incomplete(nom::Needed::new(1))),
         }
     }
 
@@ -494,7 +494,7 @@ where
         match self.fragment.position(predicate) {
             Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
             Some(n) => Ok(self.take_split(n)),
-            None => Err(Err::Incomplete(nom::Needed::Size(1))),
+            None => Err(Err::Incomplete(nom::Needed::new(1))),
         }
     }
 
@@ -565,7 +565,7 @@ macro_rules! impl_input_iter {
                 self.fragment.position(predicate)
             }
             #[inline]
-            fn slice_index(&self, count: usize) -> Option<usize> {
+            fn slice_index(&self, count: usize) -> Result<usize, nom::Needed> {
                 self.fragment.slice_index(count)
             }
         }
@@ -578,7 +578,7 @@ impl_input_iter!(
     u8,
     u8,
     Enumerate<Self::IterElem>,
-    Map<Iter<'a, Self::Item>, fn(&u8) -> u8>
+    Copied<Iter<'a, Self::Item>>
 );
 
 impl<A: Compare<B>, B: Into<LocatedSpan<B>>, X> Compare<B> for LocatedSpan<A, X> {
