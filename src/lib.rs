@@ -77,7 +77,6 @@ mod tests;
 mod lib {
     #[cfg(feature = "std")]
     pub mod std {
-        pub use std::convert::TryInto;
         pub use std::fmt::{Display, Formatter, Result as FmtResult};
         pub use std::iter::{Copied, Enumerate};
         pub use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
@@ -96,7 +95,6 @@ mod lib {
         pub use alloc::string::{String, ToString};
         #[cfg(feature = "alloc")]
         pub use alloc::vec::Vec;
-        pub use core::convert::TryInto;
         pub use core::iter::{Copied, Enumerate};
         pub use core::ops::{Range, RangeFrom, RangeFull, RangeTo};
         pub use core::slice;
@@ -481,7 +479,7 @@ where
     {
         match self.fragment.position(predicate) {
             Some(n) => Ok(self.take_split(n)),
-            None => Err(Err::Incomplete(nom::Needed::Size(1usize.try_into().unwrap()))),
+            None => Err(Err::Incomplete(nom::Needed::new(1))),
         }
     }
 
@@ -496,7 +494,7 @@ where
         match self.fragment.position(predicate) {
             Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
             Some(n) => Ok(self.take_split(n)),
-            None => Err(Err::Incomplete(nom::Needed::Size(1usize.try_into().unwrap()))),
+            None => Err(Err::Incomplete(nom::Needed::new(1))),
         }
     }
 
