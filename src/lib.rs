@@ -416,12 +416,11 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     }
 }
 
-impl<T: Hash, X: Hash> Hash for LocatedSpan<T, X> {
+impl<T: Hash, X> Hash for LocatedSpan<T, X> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.offset.hash(state);
         self.line.hash(state);
         self.fragment.hash(state);
-        self.extra.hash(state);
     }
 }
 

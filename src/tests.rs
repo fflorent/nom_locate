@@ -89,6 +89,25 @@ fn it_should_ignore_extra_for_equality() {
 }
 
 #[test]
+fn it_should_ignore_extra_for_hash() {
+    use std::hash::{Hash, Hasher};
+    use std::collections::hash_map::DefaultHasher;
+
+    fn calculate_hash<T: Hash>(t: &T) -> u64 {
+        let mut s = DefaultHasher::new();
+        t.hash(&mut s);
+        s.finish()
+    }
+
+    let input = &"foobar"[..];
+
+    assert_eq!(
+        calculate_hash(&StrSpanEx::new_extra(input, "foo")),
+        calculate_hash(&StrSpanEx::new_extra(input, "bar"))
+    );
+}
+
+#[test]
 fn it_should_slice_for_str() {
     let str_slice = StrSpanEx::new_extra("foobar", "extra");
     assert_eq!(
