@@ -85,6 +85,7 @@ mod lib {
         pub use std::str::{CharIndices, Chars, FromStr};
         pub use std::string::{String, ToString};
         pub use std::vec::Vec;
+        pub use std::hash::{Hash, Hasher};
     }
 
     #[cfg(not(feature = "std"))]
@@ -100,6 +101,7 @@ mod lib {
         pub use core::slice;
         pub use core::slice::Iter;
         pub use core::str::{CharIndices, Chars, FromStr};
+        pub use core::hash::{Hash, Hasher};
     }
 }
 
@@ -411,6 +413,14 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     pub fn naive_get_utf8_column(&self) -> usize {
         let before_self = self.get_columns_and_bytes_before().1;
         naive_num_chars(before_self) + 1
+    }
+}
+
+impl<T: Hash, X> Hash for LocatedSpan<T, X> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.offset.hash(state);
+        self.line.hash(state);
+        self.fragment.hash(state);
     }
 }
 
