@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## v3.0.0
+
+Breaking change:
+
+* [Update to nom 6](https://github.com/fflorent/nom_locate/pull/67)
+
+Other change:
+
+* [Implement Hash if members impl Hash](https://github.com/fflorent/nom_locate/pull/69)
+
+
 ## v2.1.0
 
 This release mostly brings some new trait implementations for convenience.
