@@ -88,6 +88,7 @@ fn it_should_ignore_extra_for_equality() {
     );
 }
 
+#[cfg(feature = "std")]
 #[test]
 fn it_should_ignore_extra_for_hash() {
     use std::hash::{Hash, Hasher};
