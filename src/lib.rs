@@ -49,7 +49,7 @@
 //!     assert_eq!(position.get_column(), 2);
 //! }
 //! # #[cfg(not(feature = "alloc"))]
-//! fn main() {}
+//! # fn main() {}
 //! ```
 //!
 //! ## Extra information
