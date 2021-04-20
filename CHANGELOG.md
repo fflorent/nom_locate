@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## v3.0.1
+
+Fix:
+
+* [Skip test it_should_ignore_extra_for_hash on no_std](https://github.com/fflorent/nom_locate/commit/42046bc1765d45dac00e2d6dd3bbd07b997946f1)
+
+Documentation fixes/updates:
+
+* [README.md: Update example code block from the documentation](https://github.com/fflorent/nom_locate/commit/5775fe3c5203ca082e8e61049eac78195e3c2386)
+* [Fix erroneous backticks in documentation + Update documentation from README and nom](https://github.com/fflorent/nom_locate/pull/63)
+
 ## v3.0.0
 
 Breaking change:
