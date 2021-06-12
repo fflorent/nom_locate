@@ -281,6 +281,8 @@ fn it_should_find_substring() {
     assert_eq!(StrSpan::new("foobar").find_substring("baz"), None);
     assert_eq!(BytesSpan::new(b"foobar").find_substring("bar"), Some(3));
     assert_eq!(BytesSpan::new(b"foobar").find_substring("baz"), None);
+    assert_eq!(BytesSpan::new(b"foobar").find_substring(b"bar" as &[u8]), Some(3));
+    assert_eq!(BytesSpan::new(b"foobar").find_substring(b"baz" as &[u8]), None);
 }
 
 #[cfg(feature = "alloc")]
