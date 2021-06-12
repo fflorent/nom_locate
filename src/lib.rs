@@ -718,12 +718,12 @@ impl<Fragment: FindToken<Token>, Token, X> FindToken<Token> for LocatedSpan<Frag
     }
 }
 
-impl<'a, T, X> FindSubstring<&'a str> for LocatedSpan<T, X>
+impl<T, U, X> FindSubstring<U> for LocatedSpan<T, X>
 where
-    T: FindSubstring<&'a str>,
+    T: FindSubstring<U>
 {
     #[inline]
-    fn find_substring(&self, substr: &'a str) -> Option<usize> {
+    fn find_substring(&self, substr: U) -> Option<usize> {
         self.fragment.find_substring(substr)
     }
 }

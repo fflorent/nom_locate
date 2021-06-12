@@ -340,3 +340,38 @@ Zielona, na niej zrzadka ciche grusze siedza.";
 
     test_str_fragments(plague, input, expected);
 }
+
+#[cfg(any(feature = "std", feature = "alloc"))]
+#[test]
+fn test_take_until_str() {
+    fn parser(i: StrSpan) -> IResult<StrSpan, ()> {
+        let (i, _) = delimited(take_until("foo"), tag("foo"), multispace0)(i)?;
+        let (i, _) = delimited(take_until("bar"), tag("bar"), multispace0)(i)?;
+        let (i, _) = eof(i)?;
+        Ok((i, ()))
+    }
+    let res = parser(LocatedSpan::new(" X foo Y bar "));
+    assert!(res.is_ok());
+    let (span, _) = res.unwrap();
+    assert_eq!(span.location_offset(), 13);
+    assert_eq!(span.location_line(), 1);
+    assert_eq!(*span.fragment(), "");
+}
+
+#[cfg(any(feature = "std", feature = "alloc"))]
+#[test]
+fn test_take_until_u8() {
+    fn parser(i: BytesSpan) -> IResult<BytesSpan, ()> {
+        // Mix string and byte conditions.
+        let (i, _) = delimited(take_until("foo"), tag("foo"), multispace0)(i)?;
+        let (i, _) = delimited(take_until(&b"bar"[..]), tag(&b"bar"[..]), multispace0)(i)?;
+        let (i, _) = eof(i)?;
+        Ok((i, ()))
+    }
+    let res = parser(LocatedSpan::new(&b" X foo Y bar "[..]));
+    assert!(res.is_ok());
+    let (span, _) = res.unwrap();
+    assert_eq!(span.location_offset(), 13);
+    assert_eq!(span.location_line(), 1);
+    assert_eq!(*span.fragment(), &b""[..]);
+}
