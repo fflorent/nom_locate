@@ -11,17 +11,11 @@ addons:
       - libdw-dev
       - binutils-dev
 
-# load travis-cargo
-before_script:
-  - |
-      pip install 'travis-cargo<0.2' --user &&
-      export PATH=$HOME/.local/bin:$PATH
-
 script:
   - |
       cargo build --no-default-features --features="$FEATURES" &&
       cargo test --no-default-features --features="$FEATURES" &&
-      travis-cargo --only stable doc
+      cargo doc --no-default-features --features="$FEATURES"
 
 # Inspired from geal/nom
 after_success:
