@@ -17,7 +17,7 @@ repository = "fflorent/nom_locate"
 
 [features]
 default = ["std"]
-std = ["nom/std", "alloc", "memchr/std"]
+std = ["nom/std", "alloc", "memchr/use_std"]
 alloc = ["nom/alloc"]
 generic-simd = ["bytecount/generic-simd"]
 runtime-dispatch-simd = ["bytecount/runtime-dispatch-simd"]
