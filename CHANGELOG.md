@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## v3.0.2
+
+Fixes:
+
+* [Generalize FindSubstring impl](https://github.com/fflorent/nom_locate/pull/72) to types other than &'a str
+* [no_std support](https://github.com/fflorent/nom_locate/pull/61)
+
+Other changes:
+
+* Switched CI from Travis to Github Actions
+* Always run 'cargo fmt' on the CI
+
 ## v3.0.1
 
 Fix:
