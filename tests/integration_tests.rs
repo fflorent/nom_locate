@@ -1,42 +1,53 @@
-#[macro_use]
-extern crate nom;
-
-use nom::{error::ErrorKind, AsBytes, FindSubstring, IResult, InputLength, Slice};
+use nom::{error::ErrorKind, error_position, AsBytes, FindSubstring, IResult, InputLength, Slice};
 use nom_locate::LocatedSpan;
 use std::cmp;
 use std::fmt::Debug;
 use std::ops::{Range, RangeFull};
 
+#[cfg(feature = "alloc")]
+use nom::bytes::complete::escaped_transform;
+
+#[cfg(any(feature = "std", feature = "alloc"))]
+use nom::{
+    bytes::complete::{tag, take_until},
+    character::complete::{char, multispace0},
+    combinator::eof,
+    multi::many0,
+    sequence::{delimited, preceded},
+};
+
 type StrSpan<'a> = LocatedSpan<&'a str>;
 type BytesSpan<'a> = LocatedSpan<&'a [u8]>;
 
 #[cfg(any(feature = "std", feature = "alloc"))]
-named!(simple_parser_str< StrSpan, Vec<StrSpan> >, do_parse!(
-    foo: ws!(tag!("foo")) >>
-    bar: ws!(tag!("bar")) >>
-    baz: many0!(complete!(ws!(tag!("baz")))) >>
-    eof: eof!() >>
-    ({
+fn simple_parser_str(i: StrSpan) -> IResult<StrSpan, Vec<StrSpan>> {
+    let (i, foo) = delimited(multispace0, tag("foo"), multispace0)(i)?;
+    let (i, bar) = delimited(multispace0, tag("bar"), multispace0)(i)?;
+    let (i, baz) = many0(delimited(multispace0, tag("baz"), multispace0))(i)?;
+    let (i, eof) = eof(i)?;
+
+    Ok({
         let mut res = vec![foo, bar];
         res.extend(baz);
         res.push(eof);
-        res
+        (i, res)
     })
-));
+}
 
 #[cfg(any(feature = "std", feature = "alloc"))]
-named!(simple_parser_u8< BytesSpan, Vec<BytesSpan> >, do_parse!(
-    foo: ws!(tag!("foo")) >>
-    bar: ws!(tag!("bar")) >>
-    baz: many0!(complete!(ws!(tag!("baz")))) >>
-    eof: eof!() >>
-    ({
+fn simple_parser_u8(i: BytesSpan) -> IResult<BytesSpan, Vec<BytesSpan>> {
+    let (i, foo) = delimited(multispace0, tag("foo"), multispace0)(i)?;
+    let (i, bar) = delimited(multispace0, tag("bar"), multispace0)(i)?;
+    let (i, baz) = many0(delimited(multispace0, tag("baz"), multispace0))(i)?;
+    let (i, eof) = eof(i)?;
+
+    Ok({
         let mut res = vec![foo, bar];
         res.extend(baz);
         res.push(eof);
-        res
+        (i, res)
     })
-));
+}
 
 struct Position {
     line: u32,
@@ -235,11 +246,17 @@ fn find_substring<'a>(
 fn test_escaped_string() {
     #[allow(unused)]
     use nom::Needed; // https://github.com/Geal/nom/issues/780
-    named!(string<StrSpan, String>, delimited!(
-        char!('"'),
-        escaped_transform!(call!(nom::character::complete::alpha1), '\\', nom::character::complete::anychar),
-        char!('"')
-    ));
+    fn string(i: StrSpan) -> IResult<StrSpan, String> {
+        delimited(
+            char('"'),
+            escaped_transform(
+                nom::character::complete::alpha1,
+                '\\',
+                nom::character::complete::anychar,
+            ),
+            char('"'),
+        )(i)
+    }
 
     let res = string(LocatedSpan::new("\"foo\\\"bar\""));
     assert!(res.is_ok());
@@ -251,18 +268,19 @@ fn test_escaped_string() {
 }
 
 #[cfg(any(feature = "std", feature = "alloc"))]
-named!(plague<StrSpan, Vec<StrSpan> >, do_parse!(
-    ojczyzno: call!(find_substring, "Ojczyzno") >>
-    jak: many0!(call!(find_substring, "jak ")) >>
-    zielona: call!(find_substring, "Zielona") >>
-    take_until!(".") >> tag!(".") >>
-    ({
+fn plague(i: StrSpan) -> IResult<StrSpan, Vec<StrSpan>> {
+    let (i, ojczyzno) = find_substring(i, "Ojczyzno")?;
+    let (i, jak) = many0(|i| find_substring(i, "jak "))(i)?;
+    let (i, zielona) = find_substring(i, "Zielona")?;
+    let (i, _) = preceded(take_until("."), tag("."))(i)?;
+
+    Ok({
         let mut res = vec![ojczyzno];
         res.extend(jak);
         res.push(zielona);
-        res
+        (i, res)
     })
-));
+}
 
 #[cfg(any(feature = "std", feature = "alloc"))]
 #[test]
@@ -321,4 +339,39 @@ Zielona, na niej zrzadka ciche grusze siedza.";
     ];
 
     test_str_fragments(plague, input, expected);
+}
+
+#[cfg(any(feature = "std", feature = "alloc"))]
+#[test]
+fn test_take_until_str() {
+    fn parser(i: StrSpan) -> IResult<StrSpan, ()> {
+        let (i, _) = delimited(take_until("foo"), tag("foo"), multispace0)(i)?;
+        let (i, _) = delimited(take_until("bar"), tag("bar"), multispace0)(i)?;
+        let (i, _) = eof(i)?;
+        Ok((i, ()))
+    }
+    let res = parser(LocatedSpan::new(" X foo Y bar "));
+    assert!(res.is_ok());
+    let (span, _) = res.unwrap();
+    assert_eq!(span.location_offset(), 13);
+    assert_eq!(span.location_line(), 1);
+    assert_eq!(*span.fragment(), "");
+}
+
+#[cfg(any(feature = "std", feature = "alloc"))]
+#[test]
+fn test_take_until_u8() {
+    fn parser(i: BytesSpan) -> IResult<BytesSpan, ()> {
+        // Mix string and byte conditions.
+        let (i, _) = delimited(take_until("foo"), tag("foo"), multispace0)(i)?;
+        let (i, _) = delimited(take_until(&b"bar"[..]), tag(&b"bar"[..]), multispace0)(i)?;
+        let (i, _) = eof(i)?;
+        Ok((i, ()))
+    }
+    let res = parser(LocatedSpan::new(&b" X foo Y bar "[..]));
+    assert!(res.is_ok());
+    let (span, _) = res.unwrap();
+    assert_eq!(span.location_offset(), 13);
+    assert_eq!(span.location_line(), 1);
+    assert_eq!(*span.fragment(), &b""[..]);
 }

@@ -1,5 +1,40 @@
 # CHANGELOG
 
+## v3.0.1
+
+Fix:
+
+* [Skip test it_should_ignore_extra_for_hash on no_std](https://github.com/fflorent/nom_locate/commit/42046bc1765d45dac00e2d6dd3bbd07b997946f1)
+
+Documentation fixes/updates:
+
+* [README.md: Update example code block from the documentation](https://github.com/fflorent/nom_locate/commit/5775fe3c5203ca082e8e61049eac78195e3c2386)
+* [Fix erroneous backticks in documentation + Update documentation from README and nom](https://github.com/fflorent/nom_locate/pull/63)
+
+## v3.0.0
+
+Breaking change:
+
+* [Update to nom 6](https://github.com/fflorent/nom_locate/pull/67)
+
+Other change:
+
+* [Implement Hash if members impl Hash](https://github.com/fflorent/nom_locate/pull/69)
+
+
+## v2.1.0
+
+This release mostly brings some new trait implementations for convenience.
+
+* [Change tests text for copyright reasons](https://github.com/fflorent/nom_locate/pull/56)
+* [Implement `From<T>` for `LocatedSpan`](https://github.com/fflorent/nom_locate/pull/57)
+* [Implement `Deref` for `LocatedSpan`, returning the fragment](https://github.com/fflorent/nom_locate/pull/58)
+* [Optionally implement `StableDeref` as well](https://github.com/fflorent/nom_locate/pull/65), if the `stable-deref-trait` feature is enabled.
+* [Generalize `Compare`](https://github.com/fflorent/nom_locate/pull/58)
+* [Generalize `HexDisplay`, and deprecated the `impl_hex_display!` macro which no longer does anything](https://github.com/fflorent/nom_locate/pull/58)
+* [Add `LocatedSpan::get_line_beginning`](https://github.com/fflorent/nom_locate/pull/66), which returns the beginning of a line up to the end of the LocatedSpan. Useful to display human-friendly errors.
+
+
 ## v2.0.0
 
 This release brings several breaking changes:
