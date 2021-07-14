@@ -77,6 +77,7 @@ mod lib {
     #[cfg(feature = "std")]
     pub mod std {
         pub use std::fmt::{Display, Formatter, Result as FmtResult};
+        pub use std::hash::{Hash, Hasher};
         pub use std::iter::{Copied, Enumerate};
         pub use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
         pub use std::slice;
@@ -84,7 +85,6 @@ mod lib {
         pub use std::str::{CharIndices, Chars, FromStr};
         pub use std::string::{String, ToString};
         pub use std::vec::Vec;
-        pub use std::hash::{Hash, Hasher};
     }
 
     #[cfg(not(feature = "std"))]
@@ -95,12 +95,12 @@ mod lib {
         pub use alloc::string::{String, ToString};
         #[cfg(feature = "alloc")]
         pub use alloc::vec::Vec;
+        pub use core::hash::{Hash, Hasher};
         pub use core::iter::{Copied, Enumerate};
         pub use core::ops::{Range, RangeFrom, RangeFull, RangeTo};
         pub use core::slice;
         pub use core::slice::Iter;
         pub use core::str::{CharIndices, Chars, FromStr};
-        pub use core::hash::{Hash, Hasher};
     }
 }
 
@@ -281,10 +281,7 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
                 "offset is too big"
             );
             let orig_input_ptr = self_ptr.offset(-(self.offset as isize));
-            slice::from_raw_parts(
-                orig_input_ptr,
-                self.offset + self_bytes.len(),
-            )
+            slice::from_raw_parts(orig_input_ptr, self.offset + self_bytes.len())
         }
     }
 
@@ -720,7 +717,7 @@ impl<Fragment: FindToken<Token>, Token, X> FindToken<Token> for LocatedSpan<Frag
 
 impl<T, U, X> FindSubstring<U> for LocatedSpan<T, X>
 where
-    T: FindSubstring<U>
+    T: FindSubstring<U>,
 {
     #[inline]
     fn find_substring(&self, substr: U) -> Option<usize> {

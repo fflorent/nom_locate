@@ -33,16 +33,13 @@ fn main() {
     let input = Span::new("Lorem ipsum \n foobar");
     let output = parse_foobar(input);
     let position = output.unwrap().1.position;
-    assert_eq!(
-        position,
-        unsafe {
-            Span::new_from_raw_offset(
-                14, // offset
-                2, // line
-                "", // fragment
-                (), // extra
-            )
-        }
-    );
+    assert_eq!(position, unsafe {
+        Span::new_from_raw_offset(
+            14, // offset
+            2,  // line
+            "", // fragment
+            (), // extra
+        )
+    });
     assert_eq!(position.get_column(), 2);
 }

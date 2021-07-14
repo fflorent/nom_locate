@@ -91,8 +91,8 @@ fn it_should_ignore_extra_for_equality() {
 #[cfg(feature = "std")]
 #[test]
 fn it_should_ignore_extra_for_hash() {
-    use std::hash::{Hash, Hasher};
     use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
 
     fn calculate_hash<T: Hash>(t: &T) -> u64 {
         let mut s = DefaultHasher::new();
@@ -281,8 +281,14 @@ fn it_should_find_substring() {
     assert_eq!(StrSpan::new("foobar").find_substring("baz"), None);
     assert_eq!(BytesSpan::new(b"foobar").find_substring("bar"), Some(3));
     assert_eq!(BytesSpan::new(b"foobar").find_substring("baz"), None);
-    assert_eq!(BytesSpan::new(b"foobar").find_substring(b"bar" as &[u8]), Some(3));
-    assert_eq!(BytesSpan::new(b"foobar").find_substring(b"baz" as &[u8]), None);
+    assert_eq!(
+        BytesSpan::new(b"foobar").find_substring(b"bar" as &[u8]),
+        Some(3)
+    );
+    assert_eq!(
+        BytesSpan::new(b"foobar").find_substring(b"baz" as &[u8]),
+        None
+    );
 }
 
 #[cfg(feature = "alloc")]
@@ -516,7 +522,9 @@ fn line_begining_may_ot_be_entire_len() {
     let by = "by";
     let pos = data.find_substring(by).unwrap();
     assert_eq!(
-        StrSpan::new(data).slice(pos..pos+by.len()).get_line_beginning(),
+        StrSpan::new(data)
+            .slice(pos..pos + by.len())
+            .get_line_beginning(),
         "Followed by".as_bytes(),
     );
 }
