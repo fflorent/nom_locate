@@ -526,66 +526,42 @@ where
     }
 }
 
-/// Implement nom::InputIter for a specific fragment type
-///
-/// # Parameters
-/// * `$fragment_type` - The LocatedSpan's `fragment` type
-/// * `$item` - The type of the item being iterated (a reference for fragments of type `&[T]`).
-/// * `$raw_item` - The raw type of the item being iterating (dereferenced type of $item for
-/// `&[T]`, otherwise same as `$item`)
-/// * `$iter` - The iterator type for `iter_indices()`
-/// * `$iter_elem` - The iterator type for `iter_elements()`
-///
-/// # Example of use
-///
-/// NB: This example is an extract from the nom_locate source code.
-///
-/// ```ignore
-/// #[macro_use]
-/// extern crate nom_locate;
-///
-/// impl_input_iter!(&'a str, char, char, CharIndices<'a>, Chars<'a>);
-/// impl_input_iter!(&'a [u8], &'a u8, u8, Enumerate<Iter<'a, Self::RawItem>>,
-///                  Iter<'a, Self::RawItem>);
-/// ```
 #[macro_export]
+#[deprecated(
+    since = "3.1.0",
+    note = "this implementation has been generalized and no longer requires a macro"
+)]
 macro_rules! impl_input_iter {
-    ($fragment_type:ty, $item:ty, $raw_item:ty, $iter:ty, $iter_elem:ty) => {
-        impl<'a, X> InputIter for LocatedSpan<$fragment_type, X> {
-            type Item = $item;
-            type Iter = $iter;
-            type IterElem = $iter_elem;
-            #[inline]
-            fn iter_indices(&self) -> Self::Iter {
-                self.fragment.iter_indices()
-            }
-            #[inline]
-            fn iter_elements(&self) -> Self::IterElem {
-                self.fragment.iter_elements()
-            }
-            #[inline]
-            fn position<P>(&self, predicate: P) -> Option<usize>
-            where
-                P: Fn(Self::Item) -> bool,
-            {
-                self.fragment.position(predicate)
-            }
-            #[inline]
-            fn slice_index(&self, count: usize) -> Result<usize, nom::Needed> {
-                self.fragment.slice_index(count)
-            }
-        }
-    };
+    () => {};
 }
 
-impl_input_iter!(&'a str, char, char, CharIndices<'a>, Chars<'a>);
-impl_input_iter!(
-    &'a [u8],
-    u8,
-    u8,
-    Enumerate<Self::IterElem>,
-    Copied<Iter<'a, Self::Item>>
-);
+impl<'a, T, X> InputIter for LocatedSpan<T, X>
+where
+    T: InputIter,
+{
+    type Item = T::Item;
+    type Iter = T::Iter;
+    type IterElem = T::IterElem;
+    #[inline]
+    fn iter_indices(&self) -> Self::Iter {
+        self.fragment.iter_indices()
+    }
+    #[inline]
+    fn iter_elements(&self) -> Self::IterElem {
+        self.fragment.iter_elements()
+    }
+    #[inline]
+    fn position<P>(&self, predicate: P) -> Option<usize>
+    where
+        P: Fn(Self::Item) -> bool,
+    {
+        self.fragment.position(predicate)
+    }
+    #[inline]
+    fn slice_index(&self, count: usize) -> Result<usize, nom::Needed> {
+        self.fragment.slice_index(count)
+    }
+}
 
 impl<A: Compare<B>, B: Into<LocatedSpan<B>>, X> Compare<B> for LocatedSpan<A, X> {
     #[inline(always)]
@@ -608,106 +584,57 @@ macro_rules! impl_compare {
     ( $fragment_type:ty, $compare_to_type:ty ) => {};
 }
 
-/// Implement nom::Slice for a specific fragment type and range type.
-///
-/// **You'd probably better use impl_`slice_ranges`**,
-/// unless you use a specific Range.
-///
-/// # Parameters
-/// * `$fragment_type` - The LocatedSpan's `fragment` type
-/// * `$range_type` - The range type to be use with `slice()`.
-/// * `$can_return_self` - A bool-returning lambda telling whether we
-///    can avoid creating a new `LocatedSpan`. If unsure, use `|_| false`.
-///
-/// # Example of use
-///
-/// NB: This example is an extract from the nom_locate source code.
-///
-/// ````ignore
-/// #[macro_use]
-/// extern crate nom_locate;
-///
-/// #[macro_export]
-/// macro_rules! impl_slice_ranges {
-///     ( $fragment_type:ty ) => {
-///         impl_slice_range! {$fragment_type, Range<usize>, |_| false }
-///         impl_slice_range! {$fragment_type, RangeTo<usize>, |_| false }
-///         impl_slice_range! {$fragment_type, RangeFrom<usize>, |range:&RangeFrom<usize>| range.start == 0}
-///         impl_slice_range! {$fragment_type, RangeFull, |_| true}
-///     }
-/// }
-///
-/// ````
 #[macro_export]
+#[deprecated(
+    since = "3.1.0",
+    note = "this implementation has been generalized and no longer requires a macro"
+)]
 macro_rules! impl_slice_range {
-    ( $fragment_type:ty, $range_type:ty, $can_return_self:expr ) => {
-        impl<'a, X: Clone> Slice<$range_type> for LocatedSpan<$fragment_type, X> {
-            fn slice(&self, range: $range_type) -> Self {
-                if $can_return_self(&range) {
-                    return self.clone();
-                }
-                let next_fragment = self.fragment.slice(range);
-                let consumed_len = self.fragment.offset(&next_fragment);
-                if consumed_len == 0 {
-                    return LocatedSpan {
-                        line: self.line,
-                        offset: self.offset,
-                        fragment: next_fragment,
-                        extra: self.extra.clone(),
-                    };
-                }
-
-                let consumed = self.fragment.slice(..consumed_len);
-                let next_offset = self.offset + consumed_len;
-
-                let consumed_as_bytes = consumed.as_bytes();
-                let iter = Memchr::new(b'\n', consumed_as_bytes);
-                let number_of_lines = iter.count() as u32;
-                let next_line = self.line + number_of_lines;
-
-                LocatedSpan {
-                    line: next_line,
-                    offset: next_offset,
-                    fragment: next_fragment,
-                    extra: self.extra.clone(),
-                }
-            }
-        }
-    };
+    ( $fragment_type:ty, $range_type:ty, $can_return_self:expr ) => {};
 }
 
-/// Implement nom::Slice for a specific fragment type and for these types of range:
-/// * `Range<usize>`
-/// * `RangeTo<usize>`
-/// * `RangeFrom<usize>`
-/// * `RangeFull`
-///
-/// # Parameters
-/// * `$fragment_type` - The LocatedSpan's `fragment` type
-///
-/// # Example of use
-///
-/// NB: This example is an extract from the nom_locate source code.
-///
-/// ````ignore
-/// #[macro_use]
-/// extern crate nom_locate;
-///
-/// impl_slice_ranges! {&'a str}
-/// impl_slice_ranges! {&'a [u8]}
-/// ````
 #[macro_export]
+#[deprecated(
+    since = "3.1.0",
+    note = "this implementation has been generalized and no longer requires a macro"
+)]
 macro_rules! impl_slice_ranges {
-    ( $fragment_type:ty ) => {
-        impl_slice_range! {$fragment_type, Range<usize>, |_| false }
-        impl_slice_range! {$fragment_type, RangeTo<usize>, |_| false }
-        impl_slice_range! {$fragment_type, RangeFrom<usize>, |range:&RangeFrom<usize>| range.start == 0}
-        impl_slice_range! {$fragment_type, RangeFull, |_| true}
+    ( $fragment_type:ty ) => {};
+}
+
+impl<'a, T, R, X: Clone> Slice<R> for LocatedSpan<T, X>
+where
+    T: Slice<R> + Offset + AsBytes + Slice<RangeTo<usize>>,
+{
+    fn slice(&self, range: R) -> Self {
+        let next_fragment = self.fragment.slice(range);
+        let consumed_len = self.fragment.offset(&next_fragment);
+        if consumed_len == 0 {
+            return LocatedSpan {
+                line: self.line,
+                offset: self.offset,
+                fragment: next_fragment,
+                extra: self.extra.clone(),
+            };
+        }
+
+        let consumed = self.fragment.slice(..consumed_len);
+
+        let next_offset = self.offset + consumed_len;
+
+        let consumed_as_bytes = consumed.as_bytes();
+        let iter = Memchr::new(b'\n', consumed_as_bytes);
+        let number_of_lines = iter.count() as u32;
+        let next_line = self.line + number_of_lines;
+
+        LocatedSpan {
+            line: next_line,
+            offset: next_offset,
+            fragment: next_fragment,
+            extra: self.extra.clone(),
+        }
     }
 }
-
-impl_slice_ranges! {&'a str}
-impl_slice_ranges! {&'a [u8]}
 
 impl<Fragment: FindToken<Token>, Token, X> FindToken<Token> for LocatedSpan<Fragment, X> {
     fn find_token(&self, token: Token) -> bool {
@@ -751,25 +678,11 @@ impl<T: ToString, X> Display for LocatedSpan<T, X> {
     }
 }
 
-/// Implement nom::ExtendInto for a specific fragment type.
-///
-/// # Parameters
-/// * `$fragment_type` - The LocatedSpan's `fragment` type
-/// * `$item` - The type of the item being iterated (a reference for fragments of type `&[T]`).
-/// * `$extender` - The type of the Extended.
-///
-/// # Example of use
-///
-/// NB: This example is an extract from the nom_locate source code.
-///
-/// ````ignore
-/// #[macro_use]
-/// extern crate nom_locate;
-///
-/// impl_extend_into!(&'a str, char, String);
-/// impl_extend_into!(&'a [u8], u8, Vec<u8>);
-/// ````
 #[macro_export]
+#[deprecated(
+    since = "3.1.0",
+    note = "this implementation has been generalized and no longer requires a macro"
+)]
 macro_rules! impl_extend_into {
     ($fragment_type:ty, $item:ty, $extender:ty) => {
         impl<'a, X> ExtendInto for LocatedSpan<$fragment_type, X> {
@@ -790,9 +703,23 @@ macro_rules! impl_extend_into {
 }
 
 #[cfg(feature = "alloc")]
-impl_extend_into!(&'a str, char, String);
-#[cfg(feature = "alloc")]
-impl_extend_into!(&'a [u8], u8, Vec<u8>);
+impl<'a, T, X> ExtendInto for LocatedSpan<T, X>
+where
+    T: ExtendInto,
+{
+    type Item = T::Item;
+    type Extender = T::Extender;
+
+    #[inline]
+    fn new_builder(&self) -> Self::Extender {
+        self.fragment.new_builder()
+    }
+
+    #[inline]
+    fn extend_into(&self, acc: &mut Self::Extender) {
+        self.fragment.extend_into(acc)
+    }
+}
 
 #[cfg(feature = "std")]
 #[macro_export]
