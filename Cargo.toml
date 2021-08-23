@@ -9,7 +9,7 @@ license = "MIT"
 name = "nom_locate"
 readme = "README.md"
 repository = "https://github.com/fflorent/nom_locate"
-version = "3.0.2"
+version = "3.1.0"
 edition = "2018"
 
 [badges.travis-ci]

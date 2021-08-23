@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## v3.1.0
+
+This is likely the last 3.x.x release, and 4.0.0 will use nom 7 instead of nom 6.
+
+Improvements:
+
+* [Genericizes the rest of the nom traits](https://github.com/fflorent/nom_locate/pull/76)
+
+Documentation fix:
+
+* [Fix link to docs of LocatedSpan in README](https://github.com/fflorent/nom_locate/pull/77)
+
+
 ## v3.0.2
 
 Fixes:
