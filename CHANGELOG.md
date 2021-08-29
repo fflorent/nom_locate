@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v4.0.0
+
+Breaking change:
+
+* [Update to nom 7](https://github.com/fflorent/nom_locate/pull/78)
+
 ## v3.1.0
 
 This is likely the last 3.x.x release, and 4.0.0 will use nom 7 instead of nom 6.
