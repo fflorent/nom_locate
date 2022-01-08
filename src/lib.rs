@@ -268,7 +268,7 @@ impl<T, X> LocatedSpan<T, X> {
         &self.fragment
     }
 
-    /// Transform the fragment inside into another type
+    /// Transform the extra inside into another type
     ///
     /// # Example of use
     /// ```
@@ -306,12 +306,12 @@ impl<T, X> LocatedSpan<T, X> {
     ///     assert_eq!(*n.fragment(), 10);
     /// }
     /// ```
-    pub fn map<U, F: Fn(T) -> U>(self, f: F) -> LocatedSpan<U, X> {
+    pub fn map<U, F: Fn(X) -> U>(self, f: F) -> LocatedSpan<T, U> {
         LocatedSpan {
             offset: self.offset,
             line: self.line,
-            fragment: f(self.fragment),
-            extra: self.extra,
+            fragment: self.fragment,
+            extra: f(self.extra),
         }
     }
 }
