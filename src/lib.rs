@@ -157,7 +157,7 @@ impl<T, X> core::ops::Deref for LocatedSpan<T, X> {
 /// StableDeref.
 unsafe impl<T: StableDeref, X> StableDeref for LocatedSpan<T, X> {}
 
-impl<T: AsBytes> LocatedSpan<T, ()> {
+impl<T> LocatedSpan<T, ()> {
     /// Create a span for a particular input with default `offset` and
     /// `line` values and empty extra data.
     /// You can compute the column through the `get_column` or `get_utf8_column`
@@ -195,7 +195,7 @@ impl<T: AsBytes> LocatedSpan<T, ()> {
     }
 }
 
-impl<T: AsBytes, X> LocatedSpan<T, X> {
+impl<T, X> LocatedSpan<T, X> {
     /// Create a span for a particular input with default `offset` and
     /// `line` values. You can compute the column through the `get_column` or `get_utf8_column`
     /// methods.
@@ -267,7 +267,9 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     pub fn fragment(&self) -> &T {
         &self.fragment
     }
+}
 
+impl<T: AsBytes, X> LocatedSpan<T, X> {
     // Attempt to get the "original" data slice back, by extending
     // self.fragment backwards by self.offset.
     // Note that any bytes truncated from after self.fragment will not
