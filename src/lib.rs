@@ -303,7 +303,7 @@ impl<T, X> LocatedSpan<T, X> {
     ///                             |x| x.fragment().parse::<u8>().map(|n| x.map(|_| n))
     ///                         )
     ///                       ))(span).unwrap();
-    ///     assert_eq!(*n.fragment(), 10);
+    ///     assert_eq!(n.extra, 10);
     /// }
     /// ```
     pub fn map<U, F: Fn(X) -> U>(self, f: F) -> LocatedSpan<T, U> {
