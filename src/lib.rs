@@ -672,9 +672,9 @@ impl<T, X> Offset for LocatedSpan<T, X> {
 }
 
 #[cfg(feature = "alloc")]
-impl<T: ToString, X> Display for LocatedSpan<T, X> {
+impl<T: Display, X> Display for LocatedSpan<T, X> {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
-        fmt.write_str(&self.fragment.to_string())
+        write!(fmt, "{}", self.fragment)
     }
 }
 
