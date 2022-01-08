@@ -267,6 +267,53 @@ impl<T, X> LocatedSpan<T, X> {
     pub fn fragment(&self) -> &T {
         &self.fragment
     }
+
+    /// Transform the fragment inside into another type
+    ///
+    /// # Example of use
+    /// ```
+    /// # extern crate nom_locate;
+    /// # extern crate nom;
+    /// # use nom_locate::LocatedSpan;
+    /// use nom::{
+    ///   IResult,
+    ///   multi::{many0, many1},
+    ///   combinator::{recognize, map_res},
+    ///   sequence::{terminated, tuple},
+    ///   character::complete::{char, one_of},
+    ///   bytes::complete::tag
+    /// };
+    ///
+    /// fn decimal(input: LocatedSpan<&str>) -> IResult<LocatedSpan<&str>, LocatedSpan<&str>> {
+    ///   recognize(
+    ///     many1(
+    ///       terminated(one_of("0123456789"), many0(char('_')))
+    ///     )
+    ///   )(input)
+    /// }
+    ///
+    /// fn main() {
+    ///     let span = LocatedSpan::new("$10");
+    ///     // matches the $ and then matches the decimal number afterwards,
+    ///     // converting it into a `u8` and putting that value in the span
+    ///     let (_, (_, n)) = tuple((
+    ///                         tag("$"),
+    ///                         map_res(
+    ///                             decimal,
+    ///                             |x| x.fragment().parse::<u8>().map(|n| x.map(|_| n))
+    ///                         )
+    ///                       ))(span).unwrap();
+    ///     assert_eq!(*n.fragment(), 10);
+    /// }
+    /// ```
+    pub fn map<U, F: Fn(T) -> U>(self, f: F) -> LocatedSpan<U, X> {
+        LocatedSpan {
+            offset: self.offset,
+            line: self.line,
+            fragment: f(self.fragment),
+            extra: self.extra,
+        }
+    }
 }
 
 impl<T: AsBytes, X> LocatedSpan<T, X> {
