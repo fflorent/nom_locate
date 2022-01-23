@@ -59,7 +59,7 @@
 //! use nom_locate::LocatedSpan;
 //! type Span<'a> = LocatedSpan<&'a str, String>;
 //!
-//! let input = Span::new("Lorem ipsum \n foobar", "filename");
+//! let input = Span::new_extra("Lorem ipsum \n foobar", "filename");
 //! let output = parse_foobar(input);
 //! let extra = output.unwrap().1.extra;
 //! ```
