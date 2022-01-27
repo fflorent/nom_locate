@@ -277,18 +277,15 @@ impl<T, X> LocatedSpan<T, X> {
     /// # use nom_locate::LocatedSpan;
     /// use nom::{
     ///   IResult,
-    ///   multi::{many0, many1},
     ///   combinator::{recognize, map_res},
     ///   sequence::{terminated, tuple},
-    ///   character::complete::{char, one_of},
-    ///   bytes::complete::tag
+    ///   character::{complete::{char, one_of}, is_digit},
+    ///   bytes::complete::{tag, take_while1}
     /// };
     ///
     /// fn decimal(input: LocatedSpan<&str>) -> IResult<LocatedSpan<&str>, LocatedSpan<&str>> {
     ///   recognize(
-    ///     many1(
-    ///       terminated(one_of("0123456789"), many0(char('_')))
-    ///     )
+    ///        take_while1(|c| is_digit(c as u8) || c == '_')
     ///   )(input)
     /// }
     ///
@@ -300,13 +297,13 @@ impl<T, X> LocatedSpan<T, X> {
     ///                         tag("$"),
     ///                         map_res(
     ///                             decimal,
-    ///                             |x| x.fragment().parse::<u8>().map(|n| x.map(|_| n))
+    ///                             |x| x.fragment().parse::<u8>().map(|n| x.map_extra(|_| n))
     ///                         )
     ///                       ))(span).unwrap();
     ///     assert_eq!(n.extra, 10);
     /// }
     /// ```
-    pub fn map<U, F: Fn(X) -> U>(self, f: F) -> LocatedSpan<T, U> {
+    pub fn map_extra<U, F: FnOnce(X) -> U>(self, f: F) -> LocatedSpan<T, U> {
         LocatedSpan {
             offset: self.offset,
             line: self.line,
