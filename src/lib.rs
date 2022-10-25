@@ -149,6 +149,18 @@ impl<T, X> core::ops::Deref for LocatedSpan<T, X> {
     }
 }
 
+impl<T, X> core::convert::AsRef<T> for LocatedSpan<T, X> {
+    fn as_ref(&self) -> &T {
+        &self.fragment
+    }
+}
+
+impl<T: AsRef<[u8]>, X> core::convert::AsRef<[u8]> for LocatedSpan<T, X> {
+    fn as_ref(&self) -> &[u8] {
+        &self.fragment.as_ref()
+    }
+}
+
 #[cfg(feature = "stable-deref-trait")]
 /// Optionally impl StableDeref so that this type works harmoniously with other
 /// crates that rely on this marker trait, such as `rental` and `lazy_static`.
