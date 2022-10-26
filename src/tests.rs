@@ -550,3 +550,30 @@ fn line_for_non_ascii_chars() {
        \n                     ^- The match\n",
     );
 }
+
+#[test]
+fn it_should_implement_as_ref_for_the_underlying_type() {
+    // LocatedSpan<&str> should implement AsRef<str>.
+    {
+        fn function_accepting_str<S: AsRef<str>>(_s: S) {}
+        let str_data = StrSpan::new("some data");
+        function_accepting_str(str_data);
+    }
+
+    // LocatedSpan<&[u8]> should implement AsRef<[u8]>.
+    {
+        fn function_accepting_u8_slice<B: AsRef<[u8]>>(_data: B) {}
+        let bytes_data = BytesSpan::new(b"some binary data");
+        function_accepting_u8_slice(bytes_data);
+    }
+}
+
+#[cfg(feature = "std")]
+#[test]
+fn it_should_implement_as_ref_impls_for_the_underlying_type() {
+    // Since str implements AsRef<Path>, it's useful to have LocatedSpan<&str>
+    // implement AsRef<Path> as well.
+    fn function_accepting_path<P: AsRef<std::path::Path>>(_path: P) {}
+    let str_data = StrSpan::new("some data");
+    function_accepting_path(str_data);
+}
