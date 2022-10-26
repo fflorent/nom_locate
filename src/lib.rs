@@ -149,15 +149,13 @@ impl<T, X> core::ops::Deref for LocatedSpan<T, X> {
     }
 }
 
-impl<T, X> core::convert::AsRef<T> for LocatedSpan<T, X> {
-    fn as_ref(&self) -> &T {
-        &self.fragment
-    }
-}
-
-impl<T: AsRef<[u8]>, X> core::convert::AsRef<[u8]> for LocatedSpan<T, X> {
-    fn as_ref(&self) -> &[u8] {
-        &self.fragment.as_ref()
+impl<T, U, X> core::convert::AsRef<U> for LocatedSpan<&T, X>
+where
+    T: ?Sized + core::convert::AsRef<U>,
+    U: ?Sized,
+{
+    fn as_ref(&self) -> &U {
+        self.fragment.as_ref()
     }
 }
 
