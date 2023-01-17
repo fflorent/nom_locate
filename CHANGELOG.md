@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## v4.1.0
+
+Improvements:
+
+* [Remove unneeded bounds & add map method](https://github.com/fflorent/nom_locate/pull/83)
+* [Implement AsRef for LocatedSpan](https://github.com/fflorent/nom_locate/pull/85)
+
+Documentation fix:
+
+* [Use `new_extra` instead of `new` for `LocatedSpan` with extra data](https://github.com/fflorent/nom_locate/pull/84)
+
 ## v4.0.0
 
 Breaking change:
