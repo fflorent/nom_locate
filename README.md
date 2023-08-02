@@ -1,6 +1,5 @@
 # nom_locate
 
-[![Build Status](https://travis-ci.org/fflorent/nom_locate.svg?branch=master)](https://travis-ci.org/fflorent/nom_locate)
 [![Coverage Status](https://coveralls.io/repos/github/fflorent/nom_locate/badge.svg?branch=master)](https://coveralls.io/github/fflorent/nom_locate?branch=master)
 [![](https://img.shields.io/crates/v/nom_locate.svg)](https://crates.io/crates/nom_locate)
 
