@@ -1,5 +1,5 @@
 use nom::{error::ErrorKind, error_position, AsBytes, FindSubstring, IResult, InputLength, Slice};
-use nom_locate::{RewindableFragment, LocatedSpan};
+use nom_locate::{LocatedSpan, RewindableFragment};
 use std::cmp;
 use std::fmt::Debug;
 use std::ops::{Range, RangeFull};
@@ -59,7 +59,13 @@ struct Position {
 fn test_str_fragments<'a, F, T>(parser: F, input: T, positions: Vec<Position>)
 where
     F: Fn(LocatedSpan<T>) -> IResult<LocatedSpan<T>, Vec<LocatedSpan<T>>>,
-    T: InputLength + Slice<Range<usize>> + Slice<RangeFull> + Debug + PartialEq + AsBytes + RewindableFragment,
+    T: InputLength
+        + Slice<Range<usize>>
+        + Slice<RangeFull>
+        + Debug
+        + PartialEq
+        + AsBytes
+        + RewindableFragment,
 {
     let res = parser(LocatedSpan::new(input.slice(..)))
         .map_err(|err| {
