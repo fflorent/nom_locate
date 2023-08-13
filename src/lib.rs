@@ -150,6 +150,10 @@ pub unsafe trait RewindableFragment {}
 
 unsafe impl RewindableFragment for [u8] {}
 unsafe impl<'a> RewindableFragment for &'a [u8] {}
+
+unsafe impl<const N: usize> RewindableFragment for [u8; N] {}
+unsafe impl<'a, const N: usize> RewindableFragment for &'a [u8; N] {}
+
 unsafe impl RewindableFragment for str {}
 unsafe impl<'a> RewindableFragment for &'a str {}
 
