@@ -3,7 +3,7 @@ name: CI
 on: [push, pull_request]
 
 env:
-  RUST_MINVERSION: 1.48.0
+  RUST_MINVERSION: 1.63.0
 
 jobs:
   test:
@@ -16,7 +16,7 @@ jobs:
         - stable
         - beta
         - nightly
-        - 1.48.0
+        - 1.63.0
 
         features:
         - ''
