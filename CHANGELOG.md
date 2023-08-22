@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## v4.2.0
+
+Improvements:
+
+* [Add methods to take ownership of fragment and extra data](https://github.com/fflorent/nom_locate/pull/91)
+
+Internal:
+
+* Remove build status from README
+* Fix compilation warning in example
+
 ## v4.1.0
 
 Improvements:
