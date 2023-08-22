@@ -321,6 +321,42 @@ impl<T, X> LocatedSpan<T, X> {
             extra: f(self.extra),
         }
     }
+
+    /// Takes ownership of the fragment without (re)borrowing it.
+    ///
+    /// # Example of use
+    /// ```
+    /// # extern crate nom_locate;
+    /// # extern crate nom;
+    /// # use nom_locate::LocatedSpan;
+    /// use nom::{
+    ///     IResult,
+    ///     bytes::complete::{take_till, tag},
+    ///     combinator::rest,
+    /// };
+    ///
+    /// fn parse_pair<'a>(input: LocatedSpan<&'a str>) -> IResult<LocatedSpan<&'a str>, (&'a str, &'a str)> {
+    ///     let (input, key) = take_till(|c| c == '=')(input)?;
+    ///     let (input, _) = tag("=")(input)?;
+    ///     let (input, value) = rest(input)?;
+    ///
+    ///     Ok((input, (key.into_fragment(), value.into_fragment())))
+    /// }
+    ///
+    /// fn main() {
+    ///     let span = LocatedSpan::new("key=value");
+    ///     let (_, pair) = parse_pair(span).unwrap();
+    ///     assert_eq!(pair, ("key", "value"));
+    /// }
+    /// ```
+    pub fn into_fragment(self) -> T {
+        self.fragment
+    }
+
+    /// Takes ownership of the fragment and extra data without (re)borrowing them.
+    pub fn into_fragment_and_extra(self) -> (T, X) {
+        (self.fragment, self.extra)
+    }
 }
 
 impl<T: AsBytes, X> LocatedSpan<T, X> {
