@@ -76,8 +76,8 @@ The output structure of your parser may contain the position as a `Span` (which 
 ````rust
 struct Token<'a> {
     pub position: Span<'a>,
-    pub foo: &'a str,
-    pub bar: &'a str,
+    pub _foo: &'a str,
+    pub _bar: &'a str,
 }
 ````
 
@@ -96,8 +96,8 @@ fn parse_foobar(s: Span) -> IResult<Span, Token> {
         s,
         Token {
             position: pos,
-            foo: foo.fragment,
-            bar: bar.fragment,
+            _foo: foo.fragment(),
+            _bar: bar.fragment(),
         },
     ))
 }
@@ -108,14 +108,17 @@ fn parse_foobar(s: Span) -> IResult<Span, Token> {
 The parser returns a `nom::IResult<Token, _>` (hence the `unwrap().1`). The `position` property contains the `offset`, `line` and `column`.
 
 ````rust
-fn main () {
+fn main() {
     let input = Span::new("Lorem ipsum \n foobar");
     let output = parse_foobar(input);
     let position = output.unwrap().1.position;
-    assert_eq!(position, Span {
-        offset: 14,
-        line: 2,
-        fragment: ""
+    assert_eq!(position, unsafe {
+        Span::new_from_raw_offset(
+            14, // offset
+            2,  // line
+            "", // fragment
+            (), // extra
+        )
     });
     assert_eq!(position.get_column(), 2);
 }
