@@ -12,44 +12,6 @@ The documentation of the crate is available [here](https://docs.rs/nom_locate/).
 ## How to use it
 The crate provide the [`LocatedSpan` struct](https://docs.rs/nom_locate/latest/nom_locate/struct.LocatedSpan.html) that encapsulates the data. Look at the below example and the explanations:
 
-````rust
-#[macro_use]
-extern crate nom;
-#[macro_use]
-extern crate nom_locate;
-
-use nom_locate::LocatedSpan;
-type Span<'a> = LocatedSpan<&'a str>;
-
-struct Token<'a> {
-    pub position: Span<'a>,
-    pub foo: String,
-    pub bar: String,
-}
-
-named!(parse_foobar( Span ) -> Token, do_parse!(
-    take_until!("foo") >>
-    position: position!() >>
-    foo: tag!("foo") >>
-    bar: tag!("bar") >>
-    (Token {
-        position: position,
-        foo: foo.to_string(),
-        bar: bar.to_string()
-    })
-));
-
-fn main () {
-    let input = Span::new("Lorem ipsum \n foobar");
-    let output = parse_foobar(input);
-    let position = output.unwrap().1.position;
-    assert_eq!(position.location_offset(), 14);
-    assert_eq!(position.location_line(), 2);
-    assert_eq!(position.fragment(), &"");
-    assert_eq!(position.get_column(), 2);
-}
-````
-
 ### Import
 
 Import [nom](https://github.com/geal/nom) and nom_locate.
