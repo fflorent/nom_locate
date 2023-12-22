@@ -13,39 +13,48 @@ The documentation of the crate is available [here](https://docs.rs/nom_locate/).
 The crate provide the [`LocatedSpan` struct](https://docs.rs/nom_locate/latest/nom_locate/struct.LocatedSpan.html) that encapsulates the data. Look at the below example and the explanations:
 
 ````rust
-#[macro_use]
 extern crate nom;
-#[macro_use]
 extern crate nom_locate;
 
-use nom_locate::LocatedSpan;
-type Span<'a> = LocatedSpan<&'a str>;
+use nom::bytes::complete::{tag, take_until};
+use nom::IResult;
+use nom_locate::{position, LocatedSpan};
 
+type Span<'a> = LocatedSpan<&'a str>;
 struct Token<'a> {
     pub position: Span<'a>,
-    pub foo: String,
-    pub bar: String,
+    pub _foo: &'a str,
+    pub _bar: &'a str,
 }
 
-named!(parse_foobar( Span ) -> Token, do_parse!(
-    take_until!("foo") >>
-    position: position!() >>
-    foo: tag!("foo") >>
-    bar: tag!("bar") >>
-    (Token {
-        position: position,
-        foo: foo.to_string(),
-        bar: bar.to_string()
-    })
-));
+fn parse_foobar(s: Span) -> IResult<Span, Token> {
+    let (s, _) = take_until("foo")(s)?;
+    let (s, pos) = position(s)?;
+    let (s, foo) = tag("foo")(s)?;
+    let (s, bar) = tag("bar")(s)?;
 
-fn main () {
+    Ok((
+        s,
+        Token {
+            position: pos,
+            _foo: foo.fragment(),
+            _bar: bar.fragment(),
+        },
+    ))
+}
+
+fn main() {
     let input = Span::new("Lorem ipsum \n foobar");
     let output = parse_foobar(input);
     let position = output.unwrap().1.position;
-    assert_eq!(position.location_offset(), 14);
-    assert_eq!(position.location_line(), 2);
-    assert_eq!(position.fragment(), &"");
+    assert_eq!(position, unsafe {
+        Span::new_from_raw_offset(
+            14, // offset
+            2,  // line
+            "", // fragment
+            (), // extra
+        )
+    });
     assert_eq!(position.get_column(), 2);
 }
 ````
@@ -76,8 +85,8 @@ The output structure of your parser may contain the position as a `Span` (which 
 ````rust
 struct Token<'a> {
     pub position: Span<'a>,
-    pub foo: &'a str,
-    pub bar: &'a str,
+    pub _foo: &'a str,
+    pub _bar: &'a str,
 }
 ````
 
@@ -96,8 +105,8 @@ fn parse_foobar(s: Span) -> IResult<Span, Token> {
         s,
         Token {
             position: pos,
-            foo: foo.fragment,
-            bar: bar.fragment,
+            _foo: foo.fragment(),
+            _bar: bar.fragment(),
         },
     ))
 }
@@ -108,14 +117,17 @@ fn parse_foobar(s: Span) -> IResult<Span, Token> {
 The parser returns a `nom::IResult<Token, _>` (hence the `unwrap().1`). The `position` property contains the `offset`, `line` and `column`.
 
 ````rust
-fn main () {
+fn main() {
     let input = Span::new("Lorem ipsum \n foobar");
     let output = parse_foobar(input);
     let position = output.unwrap().1.position;
-    assert_eq!(position, Span {
-        offset: 14,
-        line: 2,
-        fragment: ""
+    assert_eq!(position, unsafe {
+        Span::new_from_raw_offset(
+            14, // offset
+            2,  // line
+            "", // fragment
+            (), // extra
+        )
     });
     assert_eq!(position.get_column(), 2);
 }
