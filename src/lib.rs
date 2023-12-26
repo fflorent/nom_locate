@@ -118,6 +118,50 @@ use nom::{
 #[cfg(feature = "stable-deref-trait")]
 use stable_deref_trait::StableDeref;
 
+/// Trait of types whose implementation of [`AsBytes`], if any, returns slices that
+/// can be dereferenced with a negative offset (which is usually not allowed in Rust).
+///
+/// Because the satefy of these implementations must be checked for every implementation,
+/// `nom_locate` does not provide blanket implementations for any trait, but only for
+/// concrete types.
+///
+/// # Safety
+///
+/// Implementations of `WellBehavedFragment` must uphold one invariant: each instance
+/// `fragment` of the type has an `offset` property, and the fragment type satisfies
+/// these assertions:
+///
+/// * an instance's `offset` is constant for its lifetime (ie. it cannot change due
+///   to interior mutability or global/external state)
+/// * `offset` is nonnegative (ie. zero or greater; it is usually zero when passed
+///   to [`LocatedSpan::new`])
+/// * if the type implements [`AsBytes`] then [`AsBytes::as_bytes`] must return a slice
+///   whose underlying `*const u8` can be decremented by any number smaller or equal
+///   to the `offset` and dereferenced safely. (ie. they are an offset in a larger
+///   contiguous bye array)
+/// * if the type implements [`Offset`], then the value returned by [`Offset::offset`]
+///   must be equal to its `offset` (technically, they may safely return a value greater
+///   than their `offset`, but it is unlikely to be correct, and may change in future
+///   versions of `nom_locate`)
+/// * if the type implements [`Slice`], then the new instance returned by [`Slice::slice`]
+///   must have an `offset` equal to the original `offset` plus the `start` of the range
+///   argument (ditto)
+pub unsafe trait RewindableFragment {}
+
+unsafe impl RewindableFragment for [u8] {}
+unsafe impl<'a> RewindableFragment for &'a [u8] {}
+
+unsafe impl<const N: usize> RewindableFragment for [u8; N] {}
+unsafe impl<'a, const N: usize> RewindableFragment for &'a [u8; N] {}
+
+unsafe impl RewindableFragment for str {}
+unsafe impl<'a> RewindableFragment for &'a str {}
+
+#[cfg(any(feature = "std", feature = "alloc"))]
+unsafe impl RewindableFragment for Vec<u8> {}
+#[cfg(any(feature = "std", feature = "alloc"))]
+unsafe impl RewindableFragment for String {}
+
 /// A LocatedSpan is a set of meta information about the location of a token, including extra
 /// information.
 ///
@@ -359,7 +403,7 @@ impl<T, X> LocatedSpan<T, X> {
     }
 }
 
-impl<T: AsBytes, X> LocatedSpan<T, X> {
+impl<T: AsBytes + RewindableFragment, X> LocatedSpan<T, X> {
     // Attempt to get the "original" data slice back, by extending
     // self.fragment backwards by self.offset.
     // Note that any bytes truncated from after self.fragment will not
@@ -696,7 +740,7 @@ macro_rules! impl_slice_ranges {
 
 impl<'a, T, R, X: Clone> Slice<R> for LocatedSpan<T, X>
 where
-    T: Slice<R> + Offset + AsBytes + Slice<RangeTo<usize>>,
+    T: Slice<R> + Offset + AsBytes + Slice<RangeTo<usize>> + RewindableFragment,
 {
     fn slice(&self, range: R) -> Self {
         let next_fragment = self.fragment.slice(range);
