@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## master
+
+Breaking change:
+
+* [Migrate to 8.0 `nom`](https://github.com/fflorent/nom_locate/pull/96)
+
 ## v4.2.0
 
 Improvements:
