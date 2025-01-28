@@ -1,13 +1,11 @@
 # FAQ
 
-## How to use LocatedSpan with my own input type?
+## How to use `LocatedSpan` with my own input type?
 
-LocatedSpan has been designed to wrap any input type. By default it wraps `&str` and `&[u8]` but it should work with any other types.
+`LocatedSpan` has been designed to wrap any input type. By default it wraps `&str` and `&[u8]` but it should work with any other types.
 
 To do so, all you need is to ensure that your input type implements these traits:
- - `nom::InputLength`
- - `nom::Slice`
- - `nom::InputIter`
+ - `nom::Input`
  - `nom::Compare`
  - `nom::Offset`
  - `nom::CompareResult`
