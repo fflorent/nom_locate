@@ -496,7 +496,7 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
         naive_num_chars(before_self) + 1
     }
 
-    // Helper for `Input::take` and `Input::take_from()` implementations.
+    // Helper for `Input::take()` and `Input::take_from()` implementations.
     fn slice_by(&self, next_fragment: T) -> Self
     where
         T: AsBytes + Input + Offset,
