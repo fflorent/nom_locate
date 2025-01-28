@@ -11,7 +11,7 @@ readme = "README.md"
 repository = "https://github.com/fflorent/nom_locate"
 version = "4.2.0"
 edition = "2018"
-rust-version = "1.63.0"
+rust-version = "1.65.0"
 
 [badges.travis-ci]
 repository = "fflorent/nom_locate"
