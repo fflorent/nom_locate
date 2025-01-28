@@ -11,16 +11,13 @@ mod lib {
     }
 }
 
+use super::{LocatedSpan, SliceInput};
 #[cfg(feature = "alloc")]
 use lib::std::*;
 
-use super::LocatedSpan;
 #[cfg(feature = "alloc")]
 use nom::ParseTo;
-use nom::{
-    error::ErrorKind, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputTake,
-    InputTakeAtPosition, Offset, Slice,
-};
+use nom::{error::ErrorKind, Compare, CompareResult, FindSubstring, FindToken, Input, Offset};
 
 type StrSpan<'a> = LocatedSpan<&'a str>;
 type BytesSpan<'a> = LocatedSpan<&'a [u8]>;

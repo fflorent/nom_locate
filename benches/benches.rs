@@ -1,8 +1,7 @@
 #![feature(test)]
 extern crate test;
 
-use nom::Slice;
-use nom_locate::LocatedSpan;
+use nom_locate::{LocatedSpan, SliceInput};
 
 use test::Bencher;
 
