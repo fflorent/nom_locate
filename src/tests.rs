@@ -17,10 +17,7 @@ use lib::std::*;
 use super::LocatedSpan;
 #[cfg(feature = "alloc")]
 use nom::ParseTo;
-use nom::{
-    error::ErrorKind, Compare, CompareResult, FindSubstring, FindToken, InputIter, InputTake,
-    InputTakeAtPosition, Offset, Slice,
-};
+use nom::{error::ErrorKind, Compare, CompareResult, FindSubstring, FindToken, Input, Offset};
 
 type StrSpan<'a> = LocatedSpan<&'a str>;
 type BytesSpan<'a> = LocatedSpan<&'a [u8]>;
@@ -112,7 +109,7 @@ fn it_should_ignore_extra_for_hash() {
 fn it_should_slice_for_str() {
     let str_slice = StrSpanEx::new_extra("foobar", "extra");
     assert_eq!(
-        str_slice.slice(1..),
+        str_slice.take_from(1),
         StrSpanEx {
             offset: 1,
             line: 1,
@@ -121,7 +118,7 @@ fn it_should_slice_for_str() {
         }
     );
     assert_eq!(
-        str_slice.slice(1..3),
+        str_slice.take(3).take_from(1),
         StrSpanEx {
             offset: 1,
             line: 1,
@@ -130,7 +127,7 @@ fn it_should_slice_for_str() {
         }
     );
     assert_eq!(
-        str_slice.slice(..3),
+        str_slice.take(3),
         StrSpanEx {
             offset: 0,
             line: 1,
@@ -138,14 +135,14 @@ fn it_should_slice_for_str() {
             extra: "extra",
         }
     );
-    assert_eq!(str_slice.slice(..), str_slice);
+    assert_eq!(str_slice.take_from(0), str_slice);
 }
 
 #[test]
 fn it_should_slice_for_u8() {
     let bytes_slice = BytesSpanEx::new_extra(b"foobar", "extra");
     assert_eq!(
-        bytes_slice.slice(1..),
+        bytes_slice.take_from(1),
         BytesSpanEx {
             offset: 1,
             line: 1,
@@ -154,7 +151,7 @@ fn it_should_slice_for_u8() {
         }
     );
     assert_eq!(
-        bytes_slice.slice(1..3),
+        bytes_slice.take(3).take_from(1),
         BytesSpanEx {
             offset: 1,
             line: 1,
@@ -163,7 +160,7 @@ fn it_should_slice_for_u8() {
         }
     );
     assert_eq!(
-        bytes_slice.slice(..3),
+        bytes_slice.take(3),
         BytesSpanEx {
             offset: 0,
             line: 1,
@@ -171,7 +168,7 @@ fn it_should_slice_for_u8() {
             extra: "extra",
         }
     );
-    assert_eq!(bytes_slice.slice(..), bytes_slice);
+    assert_eq!(bytes_slice.take_from(0), bytes_slice);
 }
 
 #[test]
@@ -182,13 +179,13 @@ fn it_should_calculate_columns() {
     );
 
     let bar_idx = input.find_substring("bar").unwrap();
-    assert_eq!(input.slice(bar_idx..).get_column(), 9);
+    assert_eq!(input.take_from(bar_idx).get_column(), 9);
 }
 
 #[test]
 fn it_should_calculate_columns_accurately_with_non_ascii_chars() {
     let s = StrSpan::new("メカジキ");
-    assert_eq!(s.slice(6..).get_utf8_column(), 3);
+    assert_eq!(s.take_from(6).get_utf8_column(), 3);
 }
 
 #[test]
@@ -321,10 +318,10 @@ fn it_should_calculate_offset_for_u8() {
 #[test]
 fn it_should_calculate_offset_for_str() {
     let s = StrSpan::new("abcřèÂßÇd123");
-    let a = s.slice(..);
-    let b = a.slice(7..);
-    let c = a.slice(..5);
-    let d = a.slice(5..9);
+    let a = s.take_from(0);
+    let b = a.take_from(7);
+    let c = a.take(5);
+    let d = a.take(9).take_from(5);
     assert_eq!(a.offset(&b), 7);
     assert_eq!(a.offset(&c), 0);
     assert_eq!(a.offset(&d), 5);
@@ -459,7 +456,9 @@ fn line_of_single_line_start_is_whole() {
 fn line_of_single_line_end_is_whole() {
     let data = "A single line";
     assert_eq!(
-        StrSpan::new(data).slice(data.len()..).get_line_beginning(),
+        StrSpan::new(data)
+            .take_from(data.len())
+            .get_line_beginning(),
         "A single line".as_bytes(),
     );
 }
@@ -484,7 +483,7 @@ fn line_of_nl_is_before() {
          \nand a third\n";
     assert_eq!(
         StrSpan::new(data)
-            .slice(data.find('\n').unwrap()..)
+            .take_from(data.find('\n').unwrap())
             .get_line_beginning(),
         "One line of text".as_bytes(),
     );
@@ -496,7 +495,9 @@ fn line_of_end_after_nl_is_empty() {
          \nFollowed by a second\
          \nand a third\n";
     assert_eq!(
-        StrSpan::new(data).slice(data.len()..).get_line_beginning(),
+        StrSpan::new(data)
+            .take_from(data.len())
+            .get_line_beginning(),
         "".as_bytes(),
     );
 }
@@ -507,7 +508,9 @@ fn line_of_end_no_nl_is_last() {
          \nFollowed by a second\
          \nand a third";
     assert_eq!(
-        StrSpan::new(data).slice(data.len()..).get_line_beginning(),
+        StrSpan::new(data)
+            .take_from(data.len())
+            .get_line_beginning(),
         "and a third".as_bytes(),
     );
 }
@@ -523,7 +526,8 @@ fn line_begining_may_ot_be_entire_len() {
     let pos = data.find_substring(by).unwrap();
     assert_eq!(
         StrSpan::new(data)
-            .slice(pos..pos + by.len())
+            .take(pos + by.len())
+            .take_from(pos)
             .get_line_beginning(),
         "Followed by".as_bytes(),
     );
@@ -537,7 +541,7 @@ fn line_for_non_ascii_chars() {
          \nFörra raden var först, den här är i mitten\
          \noch här är sista raden.\n",
     );
-    let s = data.slice(data.find_substring("först").unwrap()..);
+    let s = data.take_from(data.find_substring("först").unwrap());
     assert_eq!(
         format!(
             "{line_no:3}: {line_text}\n    {0:>lpos$}^- The match\n",

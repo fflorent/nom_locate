@@ -276,30 +276,31 @@ impl<T, X> LocatedSpan<T, X> {
     /// # extern crate nom;
     /// # use nom_locate::LocatedSpan;
     /// use nom::{
-    ///   IResult,
+    ///   IResult, AsChar, Parser,
     ///   combinator::{recognize, map_res},
-    ///   sequence::{terminated, tuple},
-    ///   character::{complete::{char, one_of}, is_digit},
-    ///   bytes::complete::{tag, take_while1}
+    ///   sequence::terminated,
+    ///   character::complete::{char, one_of},
+    ///   bytes::complete::{tag, take_while1},
     /// };
     ///
     /// fn decimal(input: LocatedSpan<&str>) -> IResult<LocatedSpan<&str>, LocatedSpan<&str>> {
     ///   recognize(
-    ///        take_while1(|c| is_digit(c as u8) || c == '_')
-    ///   )(input)
+    ///        take_while1(|c: char| c.is_dec_digit() || c == '_')
+    ///   ).parse(input)
     /// }
     ///
     /// fn main() {
-    ///     let span = LocatedSpan::new("$10");
+    ///     use nom::Parser;
+    /// let span = LocatedSpan::new("$10");
     ///     // matches the $ and then matches the decimal number afterwards,
     ///     // converting it into a `u8` and putting that value in the span
-    ///     let (_, (_, n)) = tuple((
-    ///                         tag("$"),
-    ///                         map_res(
-    ///                             decimal,
-    ///                             |x| x.fragment().parse::<u8>().map(|n| x.map_extra(|_| n))
-    ///                         )
-    ///                       ))(span).unwrap();
+    ///     let (_, (_, n)) = (
+    ///         tag("$"),
+    ///         map_res(
+    ///             decimal,
+    ///             |x| x.fragment().parse::<u8>().map(|n| x.map_extra(|_| n))
+    ///         )
+    ///     ).parse(span).unwrap();
     ///     assert_eq!(n.extra, 10);
     /// }
     /// ```
@@ -391,7 +392,7 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     /// # extern crate nom_locate;
     /// # extern crate nom;
     /// # use nom_locate::LocatedSpan;
-    /// # use nom::{Slice, FindSubstring};
+    /// # use nom::{Input, FindSubstring};
     /// #
     /// # fn main() {
     /// let program = LocatedSpan::new(
@@ -401,7 +402,7 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     /// let multi = program.find_substring("multi").unwrap();
     ///
     /// assert_eq!(
-    ///     program.slice(multi..).get_line_beginning(),
+    ///     program.take_from(multi).get_line_beginning(),
     ///     "This is a multi-line input".as_bytes(),
     /// );
     /// # }
@@ -425,12 +426,13 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     /// # extern crate nom_locate;
     /// # extern crate nom;
     /// # use nom_locate::LocatedSpan;
-    /// # use nom::Slice;
+    /// # use nom::Input;
     /// #
     /// # fn main() {
+    /// use nom::Input;
     /// let span = LocatedSpan::new("foobar");
     ///
-    /// assert_eq!(span.slice(3..).get_column(), 4);
+    /// assert_eq!(span.take_from(3).get_column(), 4);
     /// # }
     /// ```
     pub fn get_column(&self) -> usize {
@@ -451,14 +453,15 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     /// # extern crate nom_locate;
     /// # extern crate nom;
     /// # use nom_locate::LocatedSpan;
-    /// # use nom::{Slice, FindSubstring};
+    /// # use nom::{Input, FindSubstring};
     /// #
     /// # fn main() {
+    /// use nom::Input;
     /// let span = LocatedSpan::new("メカジキ");
     /// let indexOf3dKanji = span.find_substring("ジ").unwrap();
     ///
-    /// assert_eq!(span.slice(indexOf3dKanji..).get_column(), 7);
-    /// assert_eq!(span.slice(indexOf3dKanji..).get_utf8_column(), 3);
+    /// assert_eq!(span.take_from(indexOf3dKanji).get_column(), 7);
+    /// assert_eq!(span.take_from(indexOf3dKanji).get_utf8_column(), 3);
     /// # }
     /// ```
     pub fn get_utf8_column(&self) -> usize {
@@ -478,14 +481,14 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     /// # extern crate nom_locate;
     /// # extern crate nom;
     /// # use nom_locate::LocatedSpan;
-    /// # use nom::{Slice, FindSubstring};
+    /// # use nom::{Input, FindSubstring};
     /// #
     /// # fn main() {
     /// let span = LocatedSpan::new("メカジキ");
     /// let indexOf3dKanji = span.find_substring("ジ").unwrap();
     ///
-    /// assert_eq!(span.slice(indexOf3dKanji..).get_column(), 7);
-    /// assert_eq!(span.slice(indexOf3dKanji..).naive_get_utf8_column(), 3);
+    /// assert_eq!(span.take_from(indexOf3dKanji).get_column(), 7);
+    /// assert_eq!(span.take_from(indexOf3dKanji).naive_get_utf8_column(), 3);
     /// # }
     /// ```
     pub fn naive_get_utf8_column(&self) -> usize {

@@ -1,7 +1,7 @@
 #![feature(test)]
 extern crate test;
 
-use nom::Slice;
+use nom::Input;
 use nom_locate::LocatedSpan;
 
 use test::Bencher;
@@ -102,7 +102,7 @@ fn bench_slice_full(b: &mut Bencher) {
     let input = LocatedSpan::new(TEXT);
 
     b.iter(|| {
-        input.slice(..);
+        input.take_from(0);
     });
 }
 
@@ -111,16 +111,7 @@ fn bench_slice_from(b: &mut Bencher) {
     let input = LocatedSpan::new(TEXT);
 
     b.iter(|| {
-        input.slice(200..);
-    });
-}
-
-#[bench]
-fn bench_slice_from_zero(b: &mut Bencher) {
-    let input = LocatedSpan::new(TEXT);
-
-    b.iter(|| {
-        input.slice(0..);
+        input.take_from(200);
     });
 }
 
@@ -129,7 +120,7 @@ fn bench_slice_to(b: &mut Bencher) {
     let input = LocatedSpan::new(TEXT);
 
     b.iter(|| {
-        input.slice(..200);
+        input.take(200);
     });
 }
 
@@ -138,7 +129,7 @@ fn bench_slice(b: &mut Bencher) {
     let input = LocatedSpan::new(TEXT);
 
     b.iter(|| {
-        input.slice(200..300);
+        input.take(300).take_from(200);
     });
 }
 
@@ -148,7 +139,7 @@ fn bench_slice_columns_only(b: &mut Bencher) {
     let input = LocatedSpan::new(text.as_str());
 
     b.iter(|| {
-        input.slice(499..501).get_utf8_column();
+        input.take(501).take_from(499).get_utf8_column();
     });
 }
 
@@ -161,6 +152,6 @@ fn bench_slice_columns_only_for_ascii_text(b: &mut Bencher) {
 
     assert!(text.is_ascii());
     b.iter(|| {
-        input.slice(500..501).get_column();
+        input.take(501).take_from(500).get_column();
     });
 }
