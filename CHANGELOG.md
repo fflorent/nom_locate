@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## master
+## v5.0.0
 
 Breaking change:
 

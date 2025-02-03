@@ -9,7 +9,7 @@ license = "MIT"
 name = "nom_locate"
 readme = "README.md"
 repository = "https://github.com/fflorent/nom_locate"
-version = "4.2.0"
+version = "5.0.0"
 edition = "2018"
 rust-version = "1.65.0"
 
