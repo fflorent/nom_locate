@@ -78,13 +78,9 @@ mod lib {
     pub mod std {
         pub use std::fmt::{Display, Formatter, Result as FmtResult};
         pub use std::hash::{Hash, Hasher};
-        pub use std::iter::{Copied, Enumerate};
-        pub use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
         pub use std::slice;
-        pub use std::slice::Iter;
-        pub use std::str::{CharIndices, Chars, FromStr};
-        pub use std::string::{String, ToString};
-        pub use std::vec::Vec;
+        pub use std::str::FromStr;
+        pub use std::string::ToString;
     }
 
     #[cfg(not(feature = "std"))]
@@ -92,15 +88,10 @@ mod lib {
         #[cfg(feature = "alloc")]
         pub use alloc::fmt::{Display, Formatter, Result as FmtResult};
         #[cfg(feature = "alloc")]
-        pub use alloc::string::{String, ToString};
-        #[cfg(feature = "alloc")]
-        pub use alloc::vec::Vec;
+        pub use alloc::string::ToString;
         pub use core::hash::{Hash, Hasher};
-        pub use core::iter::{Copied, Enumerate};
-        pub use core::ops::{Range, RangeFrom, RangeFull, RangeTo};
         pub use core::slice;
-        pub use core::slice::Iter;
-        pub use core::str::{CharIndices, Chars, FromStr};
+        pub use core::str::FromStr;
     }
 }
 
@@ -111,9 +102,8 @@ use memchr::Memchr;
 #[cfg(feature = "alloc")]
 use nom::ExtendInto;
 use nom::{
-    error::{ErrorKind, ParseError},
-    AsBytes, Compare, CompareResult, Err, FindSubstring, FindToken, IResult, InputIter,
-    InputLength, InputTake, InputTakeAtPosition, Offset, ParseTo, Slice,
+    error::ParseError, AsBytes, Compare, CompareResult, FindSubstring, FindToken, IResult, Input,
+    Offset, ParseTo,
 };
 #[cfg(feature = "stable-deref-trait")]
 use stable_deref_trait::StableDeref;
@@ -286,30 +276,31 @@ impl<T, X> LocatedSpan<T, X> {
     /// # extern crate nom;
     /// # use nom_locate::LocatedSpan;
     /// use nom::{
-    ///   IResult,
+    ///   IResult, AsChar, Parser,
     ///   combinator::{recognize, map_res},
-    ///   sequence::{terminated, tuple},
-    ///   character::{complete::{char, one_of}, is_digit},
-    ///   bytes::complete::{tag, take_while1}
+    ///   sequence::terminated,
+    ///   character::complete::{char, one_of},
+    ///   bytes::complete::{tag, take_while1},
     /// };
     ///
     /// fn decimal(input: LocatedSpan<&str>) -> IResult<LocatedSpan<&str>, LocatedSpan<&str>> {
     ///   recognize(
-    ///        take_while1(|c| is_digit(c as u8) || c == '_')
-    ///   )(input)
+    ///        take_while1(|c: char| c.is_dec_digit() || c == '_')
+    ///   ).parse(input)
     /// }
     ///
     /// fn main() {
-    ///     let span = LocatedSpan::new("$10");
+    ///     use nom::Parser;
+    /// let span = LocatedSpan::new("$10");
     ///     // matches the $ and then matches the decimal number afterwards,
     ///     // converting it into a `u8` and putting that value in the span
-    ///     let (_, (_, n)) = tuple((
-    ///                         tag("$"),
-    ///                         map_res(
-    ///                             decimal,
-    ///                             |x| x.fragment().parse::<u8>().map(|n| x.map_extra(|_| n))
-    ///                         )
-    ///                       ))(span).unwrap();
+    ///     let (_, (_, n)) = (
+    ///         tag("$"),
+    ///         map_res(
+    ///             decimal,
+    ///             |x| x.fragment().parse::<u8>().map(|n| x.map_extra(|_| n))
+    ///         )
+    ///     ).parse(span).unwrap();
     ///     assert_eq!(n.extra, 10);
     /// }
     /// ```
@@ -401,7 +392,7 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     /// # extern crate nom_locate;
     /// # extern crate nom;
     /// # use nom_locate::LocatedSpan;
-    /// # use nom::{Slice, FindSubstring};
+    /// # use nom::{Input, FindSubstring};
     /// #
     /// # fn main() {
     /// let program = LocatedSpan::new(
@@ -411,7 +402,7 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     /// let multi = program.find_substring("multi").unwrap();
     ///
     /// assert_eq!(
-    ///     program.slice(multi..).get_line_beginning(),
+    ///     program.take_from(multi).get_line_beginning(),
     ///     "This is a multi-line input".as_bytes(),
     /// );
     /// # }
@@ -435,12 +426,13 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     /// # extern crate nom_locate;
     /// # extern crate nom;
     /// # use nom_locate::LocatedSpan;
-    /// # use nom::Slice;
+    /// # use nom::Input;
     /// #
     /// # fn main() {
+    /// use nom::Input;
     /// let span = LocatedSpan::new("foobar");
     ///
-    /// assert_eq!(span.slice(3..).get_column(), 4);
+    /// assert_eq!(span.take_from(3).get_column(), 4);
     /// # }
     /// ```
     pub fn get_column(&self) -> usize {
@@ -461,14 +453,15 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     /// # extern crate nom_locate;
     /// # extern crate nom;
     /// # use nom_locate::LocatedSpan;
-    /// # use nom::{Slice, FindSubstring};
+    /// # use nom::{Input, FindSubstring};
     /// #
     /// # fn main() {
+    /// use nom::Input;
     /// let span = LocatedSpan::new("メカジキ");
     /// let indexOf3dKanji = span.find_substring("ジ").unwrap();
     ///
-    /// assert_eq!(span.slice(indexOf3dKanji..).get_column(), 7);
-    /// assert_eq!(span.slice(indexOf3dKanji..).get_utf8_column(), 3);
+    /// assert_eq!(span.take_from(indexOf3dKanji).get_column(), 7);
+    /// assert_eq!(span.take_from(indexOf3dKanji).get_utf8_column(), 3);
     /// # }
     /// ```
     pub fn get_utf8_column(&self) -> usize {
@@ -488,19 +481,52 @@ impl<T: AsBytes, X> LocatedSpan<T, X> {
     /// # extern crate nom_locate;
     /// # extern crate nom;
     /// # use nom_locate::LocatedSpan;
-    /// # use nom::{Slice, FindSubstring};
+    /// # use nom::{Input, FindSubstring};
     /// #
     /// # fn main() {
     /// let span = LocatedSpan::new("メカジキ");
     /// let indexOf3dKanji = span.find_substring("ジ").unwrap();
     ///
-    /// assert_eq!(span.slice(indexOf3dKanji..).get_column(), 7);
-    /// assert_eq!(span.slice(indexOf3dKanji..).naive_get_utf8_column(), 3);
+    /// assert_eq!(span.take_from(indexOf3dKanji).get_column(), 7);
+    /// assert_eq!(span.take_from(indexOf3dKanji).naive_get_utf8_column(), 3);
     /// # }
     /// ```
     pub fn naive_get_utf8_column(&self) -> usize {
         let before_self = self.get_columns_and_bytes_before().1;
         naive_num_chars(before_self) + 1
+    }
+
+    // Helper for `Input::take()` and `Input::take_from()` implementations.
+    fn slice_by(&self, next_fragment: T) -> Self
+    where
+        T: AsBytes + Input + Offset,
+        X: Clone,
+    {
+        let consumed_len = self.fragment.offset(&next_fragment);
+        if consumed_len == 0 {
+            return Self {
+                line: self.line,
+                offset: self.offset,
+                fragment: next_fragment,
+                extra: self.extra.clone(),
+            };
+        }
+
+        let consumed = self.fragment.take(consumed_len);
+
+        let next_offset = self.offset + consumed_len;
+
+        let consumed_as_bytes = consumed.as_bytes();
+        let iter = Memchr::new(b'\n', consumed_as_bytes);
+        let number_of_lines = iter.count() as u32;
+        let next_line = self.line + number_of_lines;
+
+        Self {
+            line: next_line,
+            offset: next_offset,
+            fragment: next_fragment,
+            extra: self.extra.clone(),
+        }
     }
 }
 
@@ -532,89 +558,56 @@ impl<T: AsBytes, X> AsBytes for LocatedSpan<T, X> {
     }
 }
 
-impl<T: InputLength, X> InputLength for LocatedSpan<T, X> {
+impl<T, X> Input for LocatedSpan<T, X>
+where
+    T: AsBytes + Input + Offset,
+    X: Clone,
+{
+    type Item = <T as Input>::Item;
+    type Iter = <T as Input>::Iter;
+    type IterIndices = <T as Input>::IterIndices;
+
+    #[inline]
     fn input_len(&self) -> usize {
         self.fragment.input_len()
     }
-}
 
-impl<T, X> InputTake for LocatedSpan<T, X>
-where
-    Self: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
-{
-    fn take(&self, count: usize) -> Self {
-        self.slice(..count)
+    #[inline]
+    fn take(&self, index: usize) -> Self {
+        self.slice_by(self.fragment.take(index))
     }
 
-    fn take_split(&self, count: usize) -> (Self, Self) {
-        (self.slice(count..), self.slice(..count))
+    #[inline]
+    fn take_from(&self, index: usize) -> Self {
+        self.slice_by(self.fragment.take_from(index))
     }
-}
 
-impl<T, X> InputTakeAtPosition for LocatedSpan<T, X>
-where
-    T: InputTakeAtPosition + InputLength + InputIter,
-    Self: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>> + Clone,
-{
-    type Item = <T as InputIter>::Item;
+    #[inline]
+    fn take_split(&self, index: usize) -> (Self, Self) {
+        (self.take_from(index), self.take(index))
+    }
 
-    fn split_at_position_complete<P, E: ParseError<Self>>(
-        &self,
-        predicate: P,
-    ) -> IResult<Self, Self, E>
+    #[inline]
+    fn position<P>(&self, predicate: P) -> Option<usize>
     where
         P: Fn(Self::Item) -> bool,
     {
-        match self.split_at_position(predicate) {
-            Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
-            res => res,
-        }
+        self.fragment.position(predicate)
     }
 
-    fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
-    where
-        P: Fn(Self::Item) -> bool,
-    {
-        match self.fragment.position(predicate) {
-            Some(n) => Ok(self.take_split(n)),
-            None => Err(Err::Incomplete(nom::Needed::new(1))),
-        }
+    #[inline]
+    fn iter_elements(&self) -> Self::Iter {
+        self.fragment.iter_elements()
     }
 
-    fn split_at_position1<P, E: ParseError<Self>>(
-        &self,
-        predicate: P,
-        e: ErrorKind,
-    ) -> IResult<Self, Self, E>
-    where
-        P: Fn(Self::Item) -> bool,
-    {
-        match self.fragment.position(predicate) {
-            Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
-            Some(n) => Ok(self.take_split(n)),
-            None => Err(Err::Incomplete(nom::Needed::new(1))),
-        }
+    #[inline]
+    fn iter_indices(&self) -> Self::IterIndices {
+        self.fragment.iter_indices()
     }
 
-    fn split_at_position1_complete<P, E: ParseError<Self>>(
-        &self,
-        predicate: P,
-        e: ErrorKind,
-    ) -> IResult<Self, Self, E>
-    where
-        P: Fn(Self::Item) -> bool,
-    {
-        match self.fragment.position(predicate) {
-            Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
-            Some(n) => Ok(self.take_split(n)),
-            None => {
-                if self.fragment.input_len() == 0 {
-                    Err(Err::Error(E::from_error_kind(self.clone(), e)))
-                } else {
-                    Ok(self.take_split(self.input_len()))
-                }
-            }
-        }
+    #[inline]
+    fn slice_index(&self, count: usize) -> Result<usize, nom::Needed> {
+        self.fragment.slice_index(count)
     }
 }
 
@@ -625,34 +618,6 @@ where
 )]
 macro_rules! impl_input_iter {
     () => {};
-}
-
-impl<'a, T, X> InputIter for LocatedSpan<T, X>
-where
-    T: InputIter,
-{
-    type Item = T::Item;
-    type Iter = T::Iter;
-    type IterElem = T::IterElem;
-    #[inline]
-    fn iter_indices(&self) -> Self::Iter {
-        self.fragment.iter_indices()
-    }
-    #[inline]
-    fn iter_elements(&self) -> Self::IterElem {
-        self.fragment.iter_elements()
-    }
-    #[inline]
-    fn position<P>(&self, predicate: P) -> Option<usize>
-    where
-        P: Fn(Self::Item) -> bool,
-    {
-        self.fragment.position(predicate)
-    }
-    #[inline]
-    fn slice_index(&self, count: usize) -> Result<usize, nom::Needed> {
-        self.fragment.slice_index(count)
-    }
 }
 
 impl<A: Compare<B>, B: Into<LocatedSpan<B>>, X> Compare<B> for LocatedSpan<A, X> {
@@ -692,40 +657,6 @@ macro_rules! impl_slice_range {
 )]
 macro_rules! impl_slice_ranges {
     ( $fragment_type:ty ) => {};
-}
-
-impl<'a, T, R, X: Clone> Slice<R> for LocatedSpan<T, X>
-where
-    T: Slice<R> + Offset + AsBytes + Slice<RangeTo<usize>>,
-{
-    fn slice(&self, range: R) -> Self {
-        let next_fragment = self.fragment.slice(range);
-        let consumed_len = self.fragment.offset(&next_fragment);
-        if consumed_len == 0 {
-            return LocatedSpan {
-                line: self.line,
-                offset: self.offset,
-                fragment: next_fragment,
-                extra: self.extra.clone(),
-            };
-        }
-
-        let consumed = self.fragment.slice(..consumed_len);
-
-        let next_offset = self.offset + consumed_len;
-
-        let consumed_as_bytes = consumed.as_bytes();
-        let iter = Memchr::new(b'\n', consumed_as_bytes);
-        let number_of_lines = iter.count() as u32;
-        let next_line = self.line + number_of_lines;
-
-        LocatedSpan {
-            line: next_line,
-            offset: next_offset,
-            fragment: next_fragment,
-            extra: self.extra.clone(),
-        }
-    }
 }
 
 impl<Fragment: FindToken<Token>, Token, X> FindToken<Token> for LocatedSpan<Fragment, X> {
@@ -835,7 +766,7 @@ macro_rules! position {
 pub fn position<T, E>(s: T) -> IResult<T, T, E>
 where
     E: ParseError<T>,
-    T: InputIter + InputTake,
+    T: Input,
 {
     nom::bytes::complete::take(0usize)(s)
 }

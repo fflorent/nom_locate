@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## master
+
+Breaking change:
+
+* [Migrate to 8.0 `nom`](https://github.com/fflorent/nom_locate/pull/96)
+    * Bump up MSRV to 1.65
+
 ## v4.2.0
 
 Improvements:
